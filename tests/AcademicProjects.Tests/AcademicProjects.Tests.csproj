@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\AcademicProjects.Application\AcademicProjects.Application.csproj" />
     <ProjectReference Include="..\..\src\AcademicProjects.Domain\AcademicProjects.Domain.csproj" />
   </ItemGroup>
 
