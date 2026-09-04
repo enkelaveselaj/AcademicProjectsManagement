@@ -3,11 +3,13 @@ using AcademicProjects.Domain.Entities;
 using AcademicProjects.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using AcademicProjects.Application.Interfaces;
 
 namespace AcademicProjects.Infrastructure.Persistence;
 
 public class ApplicationDbContext 
-    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>,
+    IApplicationDbContext
 {
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options)

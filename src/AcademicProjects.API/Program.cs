@@ -2,6 +2,7 @@ using AcademicProjects.API.Authentication;
 using AcademicProjects.Application;
 using AcademicProjects.Infrastructure;
 using AcademicProjects.Infrastructure.Identity;
+using AcademicProjects.API.Features.Categories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,7 @@ app.UseAuthorization();
 app.MapGet("/", () => Results.Ok(new { service = "Academic Projects API", status = "running" }));
 app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
+app.MapCategoryEndpoints();
 
 await app.Services.SeedIdentityRolesAsync();
 
