@@ -9,7 +9,8 @@ public static class ProjectsEndpoints
     public static IEndpointRouteBuilder MapProjectEndpoints(
         this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/api/projects")
+        var group = endpoints
+            .MapGroup("/api/projects")
             .RequireAuthorization();
 
         group.MapGet("/", GetProjectsAsync);
@@ -62,17 +63,16 @@ public static class ProjectsEndpoints
 
     private static async Task<IResult> UpdateProjectAsync(
         Guid id,
-        UpdateProjectCommand command,
+        UpdateProjectRequest request,
         ISender sender,
         CancellationToken cancellationToken)
     {
-        if (id != command.Id)
-        {
-            return Results.BadRequest(new
-            {
-                message = "The route ID and request ID must match."
-            });
-        }
+        var command = new UpdateProjectCommand(
+            id,
+            request.Title,
+            request.Description,
+            request.Status,
+            request.CategoryId);
 
         var project = await sender.Send(
             command,

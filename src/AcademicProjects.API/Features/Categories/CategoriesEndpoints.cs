@@ -9,7 +9,8 @@ public static class CategoriesEndpoints
     public static IEndpointRouteBuilder MapCategoryEndpoints(
         this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/api/categories")
+        var group = endpoints
+            .MapGroup("/api/categories")
             .RequireAuthorization();
 
         group.MapGet("/", GetCategoriesAsync);
@@ -62,17 +63,14 @@ public static class CategoriesEndpoints
 
     private static async Task<IResult> UpdateCategoryAsync(
         Guid id,
-        UpdateCategoryCommand command,
+        UpdateCategoryRequest request,
         ISender sender,
         CancellationToken cancellationToken)
     {
-        if (id != command.Id)
-        {
-            return Results.BadRequest(new
-            {
-                message = "The route ID and request ID must match."
-            });
-        }
+        var command = new UpdateCategoryCommand(
+            id,
+            request.Name,
+            request.Description);
 
         var category = await sender.Send(
             command,
