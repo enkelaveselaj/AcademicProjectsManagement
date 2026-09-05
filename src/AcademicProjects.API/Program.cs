@@ -4,6 +4,7 @@ using AcademicProjects.Infrastructure;
 using AcademicProjects.Infrastructure.Identity;
 using AcademicProjects.API.Features.Categories;
 using AcademicProjects.API.Features.Projects;
+using AcademicProjects.API.Features.Documents;
 using AcademicProjects.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,7 @@ app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapCategoryEndpoints();
 app.MapProjectEndpoints();
+app.MapDocumentEndpoints();
 
 await app.Services.SeedIdentityRolesAsync();
 
