@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Behaviors;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,9 @@ public static class DependencyInjection
         {
             configuration.RegisterServicesFromAssembly(
                 typeof(DependencyInjection).Assembly);
+
+            configuration.AddOpenBehavior(
+                typeof(ValidationBehavior<,>));
         });
 
         services.AddValidatorsFromAssembly(
