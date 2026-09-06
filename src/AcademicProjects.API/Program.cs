@@ -6,6 +6,7 @@ using AcademicProjects.API.Features.Categories;
 using AcademicProjects.API.Features.Projects;
 using AcademicProjects.API.Features.Documents;
 using AcademicProjects.API.Features.Comments;
+using AcademicProjects.API.Features.Notifications;
 using AcademicProjects.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +37,7 @@ app.MapCategoryEndpoints();
 app.MapProjectEndpoints();
 app.MapDocumentEndpoints();
 app.MapCommentEndpoints();
+app.MapNotificationEndpoints();
 
 await app.Services.SeedIdentityRolesAsync();
 
