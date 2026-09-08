@@ -9,6 +9,7 @@ using AcademicProjects.API.Features.Comments;
 using AcademicProjects.API.Features.Notifications;
 using AcademicProjects.API.Features.ProjectMilestones;
 using AcademicProjects.API.Features.ProjectAssignments;
+using AcademicProjects.API.Features.ProjectStatusHistories;
 using AcademicProjects.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,6 +43,7 @@ app.MapCommentEndpoints();
 app.MapNotificationEndpoints();
 app.MapProjectMilestoneEndpoints();
 app.MapProjectAssignmentEndpoints();
+app.MapProjectStatusHistoryEndpoints();
 
 await app.Services.SeedIdentityRolesAsync();
 

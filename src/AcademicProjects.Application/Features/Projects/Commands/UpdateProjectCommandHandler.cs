@@ -1,5 +1,6 @@
 using AcademicProjects.Application.Features.Projects.DTOs;
 using AcademicProjects.Application.Interfaces;
+using AcademicProjects.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,6 +36,8 @@ public sealed class UpdateProjectCommandHandler(
                 $"Category with ID '{request.CategoryId}' was not found.");
         }
 
+        var previousStatus = project.Status;
+
         project.Title = request.Title.Trim();
 
         project.Description = string.IsNullOrWhiteSpace(request.Description)
@@ -43,6 +46,19 @@ public sealed class UpdateProjectCommandHandler(
 
         project.Status = request.Status;
         project.CategoryId = request.CategoryId;
+
+        if (previousStatus != request.Status)
+        {
+            context.ProjectStatusHistories.Add(new ProjectStatusHistory
+            {
+                ProjectId = project.Id,
+                PreviousStatus = previousStatus,
+                NewStatus = request.Status,
+                Comment = string.IsNullOrWhiteSpace(request.StatusChangeComment)
+                    ? null
+                    : request.StatusChangeComment.Trim()
+            });
+        }
 
         await context.SaveChangesAsync(cancellationToken);
 

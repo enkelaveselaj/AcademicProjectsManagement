@@ -22,5 +22,8 @@ public sealed class UpdateProjectCommandValidator
 
         RuleFor(command => command.CategoryId)
             .NotEmpty();
+
+        RuleFor(command => command.StatusChangeComment)
+            .MaximumLength(1_000);
     }
 }

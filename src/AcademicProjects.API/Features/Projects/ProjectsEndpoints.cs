@@ -72,7 +72,8 @@ public static class ProjectsEndpoints
             request.Title,
             request.Description,
             request.Status,
-            request.CategoryId);
+            request.CategoryId,
+            request.StatusChangeComment);
 
         var project = await sender.Send(
             command,

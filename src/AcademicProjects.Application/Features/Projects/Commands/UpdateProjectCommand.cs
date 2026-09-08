@@ -9,4 +9,5 @@ public sealed record UpdateProjectCommand(
     string Title,
     string? Description,
     ProjectStatus Status,
-    Guid CategoryId) : IRequest<ProjectDto?>;
+    Guid CategoryId,
+    string? StatusChangeComment = null) : IRequest<ProjectDto?>;

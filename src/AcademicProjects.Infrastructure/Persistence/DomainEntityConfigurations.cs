@@ -25,7 +25,7 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.ToTable("Projects");
         builder.HasKey(project => project.Id);
         builder.Property(project => project.Title).HasMaxLength(200).IsRequired();
-        builder.Property(project => project.Description).HasMaxLength(4_000).IsRequired();
+        builder.Property(project => project.Description).HasMaxLength(4_000);
         builder.Property(project => project.Status).HasConversion<int>().IsRequired();
         builder.HasOne(project => project.Category)
             .WithMany(category => category.Projects)

@@ -6,4 +6,5 @@ public sealed record UpdateProjectRequest(
     string Title,
     string? Description,
     ProjectStatus Status,
-    Guid CategoryId);
+    Guid CategoryId,
+    string? StatusChangeComment = null);

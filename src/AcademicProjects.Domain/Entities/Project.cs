@@ -7,7 +7,7 @@ public class Project : AuditableEntity
 {
     public string Title { get; set; } = string.Empty;
 
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     public ProjectStatus Status { get; set; }
         = ProjectStatus.Draft;
