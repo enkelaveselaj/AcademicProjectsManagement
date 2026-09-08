@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,13 +8,13 @@ namespace AcademicProjects.Application.Features.Documents.Queries;
 
 public sealed class GetDocumentByIdQueryHandler(
     IApplicationDbContext context)
-    : IRequestHandler<GetDocumentByIdQuery, DocumentDto?>
+    : IRequestHandler<GetDocumentByIdQuery, DocumentDto>
 {
-    public async Task<DocumentDto?> Handle(
+    public async Task<DocumentDto> Handle(
         GetDocumentByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return await context.Documents
+        var document = await context.Documents
             .AsNoTracking()
             .Where(document => document.Id == request.Id)
             .Select(document => new DocumentDto(
@@ -24,5 +25,7 @@ public sealed class GetDocumentByIdQueryHandler(
                 document.CreatedAt,
                 document.UpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
+
+        return document ?? throw new NotFoundException("Document", request.Id);
     }
 }

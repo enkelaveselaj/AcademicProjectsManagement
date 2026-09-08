@@ -42,9 +42,7 @@ public static class DocumentsEndpoints
             new GetDocumentByIdQuery(id),
             cancellationToken);
 
-        return document is null
-            ? Results.NotFound()
-            : Results.Ok(document);
+        return Results.Ok(document);
     }
 
     private static async Task<IResult> CreateDocumentAsync(
@@ -77,9 +75,7 @@ public static class DocumentsEndpoints
             command,
             cancellationToken);
 
-        return document is null
-            ? Results.NotFound()
-            : Results.Ok(document);
+        return Results.Ok(document);
     }
 
     private static async Task<IResult> DeleteDocumentAsync(
@@ -87,12 +83,10 @@ public static class DocumentsEndpoints
         ISender sender,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteDocumentCommand(id),
             cancellationToken);
 
-        return deleted
-            ? Results.NoContent()
-            : Results.NotFound();
+        return Results.NoContent();
     }
 }

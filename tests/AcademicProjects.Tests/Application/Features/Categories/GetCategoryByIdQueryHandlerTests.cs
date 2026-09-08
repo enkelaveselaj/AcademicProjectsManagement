@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.Queries;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Tests.TestHelpers;
@@ -25,15 +26,14 @@ public class GetCategoryByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentCategory_ReturnsNull()
+    public async Task Handle_NonExistentCategory_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new GetCategoryByIdQueryHandler(context);
 
-        var result = await handler.Handle(
-            new GetCategoryByIdQuery(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new GetCategoryByIdQuery(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

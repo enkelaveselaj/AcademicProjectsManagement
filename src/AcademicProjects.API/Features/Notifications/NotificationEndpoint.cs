@@ -43,9 +43,7 @@ public static class NotificationsEndpoints
             new GetNotificationByIdQuery(id),
             cancellationToken);
 
-        return notification is null
-            ? Results.NotFound()
-            : Results.Ok(notification);
+        return Results.Ok(notification);
     }
 
     private static async Task<IResult> CreateNotificationAsync(
@@ -79,9 +77,7 @@ public static class NotificationsEndpoints
             command,
             cancellationToken);
 
-        return notification is null
-            ? Results.NotFound()
-            : Results.Ok(notification);
+        return Results.Ok(notification);
     }
 
     private static async Task<IResult> DeleteNotificationAsync(
@@ -89,12 +85,10 @@ public static class NotificationsEndpoints
         ISender sender,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteNotificationCommand(id),
             cancellationToken);
 
-        return deleted
-            ? Results.NoContent()
-            : Results.NotFound();
+        return Results.NoContent();
     }
 }

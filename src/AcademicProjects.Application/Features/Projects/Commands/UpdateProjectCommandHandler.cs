@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Projects.DTOs;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
@@ -8,9 +9,9 @@ namespace AcademicProjects.Application.Features.Projects.Commands;
 
 public sealed class UpdateProjectCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<UpdateProjectCommand, ProjectDto?>
+    : IRequestHandler<UpdateProjectCommand, ProjectDto>
 {
-    public async Task<ProjectDto?> Handle(
+    public async Task<ProjectDto> Handle(
         UpdateProjectCommand request,
         CancellationToken cancellationToken)
     {
@@ -21,7 +22,7 @@ public sealed class UpdateProjectCommandHandler(
 
         if (project is null)
         {
-            return null;
+            throw new NotFoundException("Project", request.Id);
         }
 
         var category = await context.Categories
@@ -32,8 +33,7 @@ public sealed class UpdateProjectCommandHandler(
 
         if (category is null)
         {
-            throw new KeyNotFoundException(
-                $"Category with ID '{request.CategoryId}' was not found.");
+            throw new NotFoundException("Category", request.CategoryId);
         }
 
         var previousStatus = project.Status;

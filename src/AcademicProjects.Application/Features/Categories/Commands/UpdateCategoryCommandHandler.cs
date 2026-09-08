@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,9 +8,9 @@ namespace AcademicProjects.Application.Features.Categories.Commands;
 
 public sealed class UpdateCategoryCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<UpdateCategoryCommand, CategoryDto?>
+    : IRequestHandler<UpdateCategoryCommand, CategoryDto>
 {
-    public async Task<CategoryDto?> Handle(
+    public async Task<CategoryDto> Handle(
         UpdateCategoryCommand request,
         CancellationToken cancellationToken)
     {
@@ -20,7 +21,7 @@ public sealed class UpdateCategoryCommandHandler(
 
         if (category is null)
         {
-            return null;
+            throw new NotFoundException("Category", request.Id);
         }
 
         category.Name = request.Name.Trim();

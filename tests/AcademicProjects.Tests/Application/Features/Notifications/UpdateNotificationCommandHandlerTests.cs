@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Notifications.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -36,15 +37,14 @@ public class UpdateNotificationCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentNotification_ReturnsNull()
+    public async Task Handle_NonExistentNotification_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new UpdateNotificationCommandHandler(context);
 
-        var result = await handler.Handle(
-            new UpdateNotificationCommand(Guid.NewGuid(), "Message", NotificationType.Error, false, Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new UpdateNotificationCommand(Guid.NewGuid(), "Message", NotificationType.Error, false, Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

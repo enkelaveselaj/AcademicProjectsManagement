@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectStatusHistories.Queries;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -38,15 +39,14 @@ public class GetProjectStatusHistoryByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentHistory_ReturnsNull()
+    public async Task Handle_NonExistentHistory_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new GetProjectStatusHistoryByIdQueryHandler(context);
 
-        var result = await handler.Handle(
-            new GetProjectStatusHistoryByIdQuery(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new GetProjectStatusHistoryByIdQuery(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

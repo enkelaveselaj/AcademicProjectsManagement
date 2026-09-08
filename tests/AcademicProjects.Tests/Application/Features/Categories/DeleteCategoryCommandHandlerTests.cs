@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Tests.TestHelpers;
@@ -7,7 +8,7 @@ namespace AcademicProjects.Tests.Application.Features.Categories;
 public class DeleteCategoryCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_ExistingCategory_RemovesItAndReturnsTrue()
+    public async Task Handle_ExistingCategory_RemovesIt()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -16,24 +17,22 @@ public class DeleteCategoryCommandHandlerTests
 
         var handler = new DeleteCategoryCommandHandler(context);
 
-        var result = await handler.Handle(
+        await handler.Handle(
             new DeleteCategoryCommand(category.Id),
             CancellationToken.None);
 
-        Assert.True(result);
         Assert.Empty(context.Categories);
     }
 
     [Fact]
-    public async Task Handle_NonExistentCategory_ReturnsFalse()
+    public async Task Handle_NonExistentCategory_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new DeleteCategoryCommandHandler(context);
 
-        var result = await handler.Handle(
-            new DeleteCategoryCommand(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.False(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new DeleteCategoryCommand(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

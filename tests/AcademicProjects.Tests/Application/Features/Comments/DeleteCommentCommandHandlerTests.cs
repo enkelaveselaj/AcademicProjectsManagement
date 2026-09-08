@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -8,7 +9,7 @@ namespace AcademicProjects.Tests.Application.Features.Comments;
 public class DeleteCommentCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_ExistingComment_RemovesItAndReturnsTrue()
+    public async Task Handle_ExistingComment_RemovesIt()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -21,24 +22,22 @@ public class DeleteCommentCommandHandlerTests
 
         var handler = new DeleteCommentCommandHandler(context);
 
-        var result = await handler.Handle(
+        await handler.Handle(
             new DeleteCommentCommand(comment.Id),
             CancellationToken.None);
 
-        Assert.True(result);
         Assert.Empty(context.Comments);
     }
 
     [Fact]
-    public async Task Handle_NonExistentComment_ReturnsFalse()
+    public async Task Handle_NonExistentComment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new DeleteCommentCommandHandler(context);
 
-        var result = await handler.Handle(
-            new DeleteCommentCommand(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.False(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new DeleteCommentCommand(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

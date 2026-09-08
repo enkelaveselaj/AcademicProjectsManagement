@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.Queries;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -30,15 +31,14 @@ public class GetCommentByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentComment_ReturnsNull()
+    public async Task Handle_NonExistentComment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new GetCommentByIdQueryHandler(context);
 
-        var result = await handler.Handle(
-            new GetCommentByIdQuery(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new GetCommentByIdQuery(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

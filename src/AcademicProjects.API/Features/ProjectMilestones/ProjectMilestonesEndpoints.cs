@@ -42,9 +42,7 @@ public static class ProjectMilestonesEndpoints
             new GetProjectMilestoneByIdQuery(id),
             cancellationToken);
 
-        return milestone is null
-            ? Results.NotFound()
-            : Results.Ok(milestone);
+        return Results.Ok(milestone);
     }
 
     private static async Task<IResult> CreateProjectMilestoneAsync(
@@ -76,9 +74,7 @@ public static class ProjectMilestonesEndpoints
             command,
             cancellationToken);
 
-        return milestone is null
-            ? Results.NotFound()
-            : Results.Ok(milestone);
+        return Results.Ok(milestone);
     }
 
     private static async Task<IResult> DeleteProjectMilestoneAsync(
@@ -86,12 +82,10 @@ public static class ProjectMilestonesEndpoints
         ISender sender,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteProjectMilestoneCommand(id),
             cancellationToken);
 
-        return deleted
-            ? Results.NoContent()
-            : Results.NotFound();
+        return Results.NoContent();
     }
 }

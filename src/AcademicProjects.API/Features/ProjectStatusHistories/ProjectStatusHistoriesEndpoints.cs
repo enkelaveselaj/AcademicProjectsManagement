@@ -38,8 +38,6 @@ public static class ProjectStatusHistoriesEndpoints
             new GetProjectStatusHistoryByIdQuery(id),
             cancellationToken);
 
-        return history is null
-            ? Results.NotFound()
-            : Results.Ok(history);
+        return Results.Ok(history);
     }
 }

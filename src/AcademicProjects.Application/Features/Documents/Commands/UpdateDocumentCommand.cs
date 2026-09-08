@@ -7,4 +7,4 @@ public sealed record UpdateDocumentCommand(
     Guid Id,
     string FileName,
     string FilePath,
-    Guid ProjectId) : IRequest<DocumentDto?>;
+    Guid ProjectId) : IRequest<DocumentDto>;

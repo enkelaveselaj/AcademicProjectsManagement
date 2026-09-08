@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AcademicProjects.Application.Features.Categories.Queries;
 
-public sealed record GetCategoryByIdQuery(Guid Id) : IRequest<CategoryDto?>;
+public sealed record GetCategoryByIdQuery(Guid Id) : IRequest<CategoryDto>;

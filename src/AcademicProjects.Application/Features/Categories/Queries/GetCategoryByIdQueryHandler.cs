@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,13 +8,13 @@ namespace AcademicProjects.Application.Features.Categories.Queries;
 
 public sealed class GetCategoryByIdQueryHandler(
     IApplicationDbContext context)
-    : IRequestHandler<GetCategoryByIdQuery, CategoryDto?>
+    : IRequestHandler<GetCategoryByIdQuery, CategoryDto>
 {
-    public async Task<CategoryDto?> Handle(
+    public async Task<CategoryDto> Handle(
         GetCategoryByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return await context.Categories
+        var category = await context.Categories
             .AsNoTracking()
             .Where(category => category.Id == request.Id)
             .Select(category => new CategoryDto(
@@ -21,5 +22,7 @@ public sealed class GetCategoryByIdQueryHandler(
                 category.Name,
                 category.Description))
             .FirstOrDefaultAsync(cancellationToken);
+
+        return category ?? throw new NotFoundException("Category", request.Id);
     }
 }

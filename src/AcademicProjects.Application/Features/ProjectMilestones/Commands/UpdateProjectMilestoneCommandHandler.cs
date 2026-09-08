@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,9 +8,9 @@ namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 
 public sealed class UpdateProjectMilestoneCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<UpdateProjectMilestoneCommand, ProjectMilestoneDto?>
+    : IRequestHandler<UpdateProjectMilestoneCommand, ProjectMilestoneDto>
 {
-    public async Task<ProjectMilestoneDto?> Handle(
+    public async Task<ProjectMilestoneDto> Handle(
         UpdateProjectMilestoneCommand request,
         CancellationToken cancellationToken)
     {
@@ -20,7 +21,7 @@ public sealed class UpdateProjectMilestoneCommandHandler(
 
         if (milestone is null)
         {
-            return null;
+            throw new NotFoundException("ProjectMilestone", request.Id);
         }
 
         var projectExists = await context.Projects
@@ -30,7 +31,7 @@ public sealed class UpdateProjectMilestoneCommandHandler(
 
         if (!projectExists)
         {
-            throw new KeyNotFoundException("Project not found.");
+            throw new NotFoundException("Project", request.ProjectId);
         }
 
         milestone.Title = request.Title.Trim();

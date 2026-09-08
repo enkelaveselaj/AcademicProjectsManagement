@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectAssignments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -8,7 +9,7 @@ namespace AcademicProjects.Tests.Application.Features.ProjectAssignments;
 public class DeleteProjectAssignmentCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_ExistingAssignment_RemovesItAndReturnsTrue()
+    public async Task Handle_ExistingAssignment_RemovesIt()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -21,24 +22,22 @@ public class DeleteProjectAssignmentCommandHandlerTests
 
         var handler = new DeleteProjectAssignmentCommandHandler(context);
 
-        var result = await handler.Handle(
+        await handler.Handle(
             new DeleteProjectAssignmentCommand(assignment.Id),
             CancellationToken.None);
 
-        Assert.True(result);
         Assert.Empty(context.ProjectAssignments);
     }
 
     [Fact]
-    public async Task Handle_NonExistentAssignment_ReturnsFalse()
+    public async Task Handle_NonExistentAssignment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new DeleteProjectAssignmentCommandHandler(context);
 
-        var result = await handler.Handle(
-            new DeleteProjectAssignmentCommand(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.False(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new DeleteProjectAssignmentCommand(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

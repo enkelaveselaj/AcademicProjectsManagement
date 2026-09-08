@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Notifications.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -8,7 +9,7 @@ namespace AcademicProjects.Tests.Application.Features.Notifications;
 public class DeleteNotificationCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_ExistingNotification_RemovesItAndReturnsTrue()
+    public async Task Handle_ExistingNotification_RemovesIt()
     {
         using var context = TestDbContextFactory.Create();
         var notification = new Notification
@@ -22,24 +23,22 @@ public class DeleteNotificationCommandHandlerTests
 
         var handler = new DeleteNotificationCommandHandler(context);
 
-        var result = await handler.Handle(
+        await handler.Handle(
             new DeleteNotificationCommand(notification.Id),
             CancellationToken.None);
 
-        Assert.True(result);
         Assert.Empty(context.Notifications);
     }
 
     [Fact]
-    public async Task Handle_NonExistentNotification_ReturnsFalse()
+    public async Task Handle_NonExistentNotification_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new DeleteNotificationCommandHandler(context);
 
-        var result = await handler.Handle(
-            new DeleteNotificationCommand(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.False(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new DeleteNotificationCommand(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

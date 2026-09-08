@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -30,20 +31,19 @@ public class UpdateProjectMilestoneCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentMilestone_ReturnsNull()
+    public async Task Handle_NonExistentMilestone_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new UpdateProjectMilestoneCommandHandler(context);
 
-        var result = await handler.Handle(
-            new UpdateProjectMilestoneCommand(Guid.NewGuid(), "Title", Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new UpdateProjectMilestoneCommand(Guid.NewGuid(), "Title", Guid.NewGuid()),
+                CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_NonExistentProject_ThrowsKeyNotFoundException()
+    public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -56,7 +56,7 @@ public class UpdateProjectMilestoneCommandHandlerTests
 
         var handler = new UpdateProjectMilestoneCommandHandler(context);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new UpdateProjectMilestoneCommand(milestone.Id, "Title", Guid.NewGuid()),
                 CancellationToken.None));

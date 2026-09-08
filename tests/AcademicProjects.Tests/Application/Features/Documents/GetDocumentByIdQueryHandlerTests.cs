@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.Queries;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -30,15 +31,14 @@ public class GetDocumentByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentDocument_ReturnsNull()
+    public async Task Handle_NonExistentDocument_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new GetDocumentByIdQueryHandler(context);
 
-        var result = await handler.Handle(
-            new GetDocumentByIdQuery(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new GetDocumentByIdQuery(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

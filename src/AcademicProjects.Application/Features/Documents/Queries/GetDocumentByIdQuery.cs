@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AcademicProjects.Application.Features.Documents.Queries;
 
-public sealed record GetDocumentByIdQuery(Guid Id) : IRequest<DocumentDto?>;
+public sealed record GetDocumentByIdQuery(Guid Id) : IRequest<DocumentDto>;

@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Projects.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,13 +8,13 @@ namespace AcademicProjects.Application.Features.Projects.Queries;
 
 public sealed class GetProjectByIdQueryHandler(
     IApplicationDbContext context)
-    : IRequestHandler<GetProjectByIdQuery, ProjectDto?>
+    : IRequestHandler<GetProjectByIdQuery, ProjectDto>
 {
-    public async Task<ProjectDto?> Handle(
+    public async Task<ProjectDto> Handle(
         GetProjectByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return await context.Projects
+        var project = await context.Projects
             .AsNoTracking()
             .Where(project => project.Id == request.Id)
             .Select(project => new ProjectDto(
@@ -24,5 +25,7 @@ public sealed class GetProjectByIdQueryHandler(
                 project.CategoryId,
                 project.Category.Name))
             .FirstOrDefaultAsync(cancellationToken);
+
+        return project ?? throw new NotFoundException("Project", request.Id);
     }
 }

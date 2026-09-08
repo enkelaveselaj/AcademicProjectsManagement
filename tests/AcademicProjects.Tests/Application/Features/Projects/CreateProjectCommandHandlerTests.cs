@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Projects.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -29,12 +30,12 @@ public class CreateProjectCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentCategory_ThrowsKeyNotFoundException()
+    public async Task Handle_NonExistentCategory_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new CreateProjectCommandHandler(context);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new CreateProjectCommand("Thesis", "Description", ProjectStatus.Draft, Guid.NewGuid()),
                 CancellationToken.None));

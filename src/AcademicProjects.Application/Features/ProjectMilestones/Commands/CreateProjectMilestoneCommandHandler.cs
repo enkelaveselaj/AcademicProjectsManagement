@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.DTOs;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
@@ -21,7 +22,7 @@ public sealed class CreateProjectMilestoneCommandHandler(
 
         if (!projectExists)
         {
-            throw new KeyNotFoundException("Project not found.");
+            throw new NotFoundException("Project", request.ProjectId);
         }
 
         var milestone = new ProjectMilestone

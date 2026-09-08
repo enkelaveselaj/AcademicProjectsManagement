@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectAssignments.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,9 +8,9 @@ namespace AcademicProjects.Application.Features.ProjectAssignments.Commands;
 
 public sealed class UpdateProjectAssignmentCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<UpdateProjectAssignmentCommand, ProjectAssignmentDto?>
+    : IRequestHandler<UpdateProjectAssignmentCommand, ProjectAssignmentDto>
 {
-    public async Task<ProjectAssignmentDto?> Handle(
+    public async Task<ProjectAssignmentDto> Handle(
         UpdateProjectAssignmentCommand request,
         CancellationToken cancellationToken)
     {
@@ -20,7 +21,7 @@ public sealed class UpdateProjectAssignmentCommandHandler(
 
         if (assignment is null)
         {
-            return null;
+            throw new NotFoundException("ProjectAssignment", request.Id);
         }
 
         var projectExists = await context.Projects
@@ -30,7 +31,7 @@ public sealed class UpdateProjectAssignmentCommandHandler(
 
         if (!projectExists)
         {
-            throw new KeyNotFoundException("Project not found.");
+            throw new NotFoundException("Project", request.ProjectId);
         }
 
         assignment.ProjectId = request.ProjectId;

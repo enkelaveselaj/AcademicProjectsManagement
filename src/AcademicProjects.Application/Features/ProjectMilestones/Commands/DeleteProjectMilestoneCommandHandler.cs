@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,9 +7,9 @@ namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 
 public sealed class DeleteProjectMilestoneCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<DeleteProjectMilestoneCommand, bool>
+    : IRequestHandler<DeleteProjectMilestoneCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeleteProjectMilestoneCommand request,
         CancellationToken cancellationToken)
     {
@@ -19,13 +20,11 @@ public sealed class DeleteProjectMilestoneCommandHandler(
 
         if (milestone is null)
         {
-            return false;
+            throw new NotFoundException("ProjectMilestone", request.Id);
         }
 
         context.ProjectMilestones.Remove(milestone);
 
         await context.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

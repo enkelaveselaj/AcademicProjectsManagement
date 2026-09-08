@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,9 +8,9 @@ namespace AcademicProjects.Application.Features.Comments.Commands;
 
 public sealed class UpdateCommentCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<UpdateCommentCommand, CommentDto?>
+    : IRequestHandler<UpdateCommentCommand, CommentDto>
 {
-    public async Task<CommentDto?> Handle(
+    public async Task<CommentDto> Handle(
         UpdateCommentCommand request,
         CancellationToken cancellationToken)
     {
@@ -20,7 +21,7 @@ public sealed class UpdateCommentCommandHandler(
 
         if (comment is null)
         {
-            return null;
+            throw new NotFoundException("Comment", request.Id);
         }
 
         var projectExists = await context.Projects
@@ -30,7 +31,7 @@ public sealed class UpdateCommentCommandHandler(
 
         if (!projectExists)
         {
-            throw new KeyNotFoundException("Project not found.");
+            throw new NotFoundException("Project", request.ProjectId);
         }
 
         comment.Content = request.Content.Trim();

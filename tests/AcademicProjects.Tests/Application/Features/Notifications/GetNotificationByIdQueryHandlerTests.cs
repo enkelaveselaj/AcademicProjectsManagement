@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Notifications.Queries;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -26,15 +27,14 @@ public class GetNotificationByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentNotification_ReturnsNull()
+    public async Task Handle_NonExistentNotification_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new GetNotificationByIdQueryHandler(context);
 
-        var result = await handler.Handle(
-            new GetNotificationByIdQuery(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new GetNotificationByIdQuery(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

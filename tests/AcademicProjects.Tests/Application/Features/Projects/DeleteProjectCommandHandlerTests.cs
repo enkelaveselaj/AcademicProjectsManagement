@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Projects.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -8,7 +9,7 @@ namespace AcademicProjects.Tests.Application.Features.Projects;
 public class DeleteProjectCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_ExistingProject_RemovesItAndReturnsTrue()
+    public async Task Handle_ExistingProject_RemovesIt()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -19,24 +20,22 @@ public class DeleteProjectCommandHandlerTests
 
         var handler = new DeleteProjectCommandHandler(context);
 
-        var result = await handler.Handle(
+        await handler.Handle(
             new DeleteProjectCommand(project.Id),
             CancellationToken.None);
 
-        Assert.True(result);
         Assert.Empty(context.Projects);
     }
 
     [Fact]
-    public async Task Handle_NonExistentProject_ReturnsFalse()
+    public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new DeleteProjectCommandHandler(context);
 
-        var result = await handler.Handle(
-            new DeleteProjectCommand(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.False(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new DeleteProjectCommand(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

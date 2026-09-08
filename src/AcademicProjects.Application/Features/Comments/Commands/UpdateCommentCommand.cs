@@ -6,4 +6,4 @@ namespace AcademicProjects.Application.Features.Comments.Commands;
 public sealed record UpdateCommentCommand(
     Guid Id,
     string Content,
-    Guid ProjectId) : IRequest<CommentDto?>;
+    Guid ProjectId) : IRequest<CommentDto>;

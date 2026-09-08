@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -29,12 +30,12 @@ public class CreateProjectMilestoneCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentProject_ThrowsKeyNotFoundException()
+    public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new CreateProjectMilestoneCommandHandler(context);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new CreateProjectMilestoneCommand("Milestone", Guid.NewGuid()),
                 CancellationToken.None));

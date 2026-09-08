@@ -4,4 +4,4 @@ using MediatR;
 namespace AcademicProjects.Application.Features.Notifications.Queries;
 
 public sealed record GetNotificationByIdQuery(Guid Id)
-    : IRequest<NotificationDto?>;
+    : IRequest<NotificationDto>;

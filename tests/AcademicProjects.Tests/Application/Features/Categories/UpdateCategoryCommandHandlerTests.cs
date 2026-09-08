@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Tests.TestHelpers;
@@ -26,15 +27,14 @@ public class UpdateCategoryCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentCategory_ReturnsNull()
+    public async Task Handle_NonExistentCategory_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new UpdateCategoryCommandHandler(context);
 
-        var result = await handler.Handle(
-            new UpdateCategoryCommand(Guid.NewGuid(), "Name", "Description"),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new UpdateCategoryCommand(Guid.NewGuid(), "Name", "Description"),
+                CancellationToken.None));
     }
 }

@@ -6,4 +6,4 @@ namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 public sealed record UpdateProjectMilestoneCommand(
     Guid Id,
     string Title,
-    Guid ProjectId) : IRequest<ProjectMilestoneDto?>;
+    Guid ProjectId) : IRequest<ProjectMilestoneDto>;

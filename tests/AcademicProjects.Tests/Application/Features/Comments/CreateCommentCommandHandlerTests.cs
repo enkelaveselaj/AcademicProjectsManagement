@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -29,12 +30,12 @@ public class CreateCommentCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentProject_ThrowsKeyNotFoundException()
+    public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new CreateCommentCommandHandler(context);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new CreateCommentCommand("Content", Guid.NewGuid()),
                 CancellationToken.None));

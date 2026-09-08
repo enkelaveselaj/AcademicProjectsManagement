@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,9 +7,9 @@ namespace AcademicProjects.Application.Features.Projects.Commands;
 
 public sealed class DeleteProjectCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<DeleteProjectCommand, bool>
+    : IRequestHandler<DeleteProjectCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeleteProjectCommand request,
         CancellationToken cancellationToken)
     {
@@ -19,13 +20,11 @@ public sealed class DeleteProjectCommandHandler(
 
         if (project is null)
         {
-            return false;
+            throw new NotFoundException("Project", request.Id);
         }
 
         context.Projects.Remove(project);
 
         await context.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

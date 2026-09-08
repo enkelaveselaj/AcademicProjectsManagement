@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -30,20 +31,19 @@ public class UpdateCommentCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentComment_ReturnsNull()
+    public async Task Handle_NonExistentComment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new UpdateCommentCommandHandler(context);
 
-        var result = await handler.Handle(
-            new UpdateCommentCommand(Guid.NewGuid(), "Content", Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new UpdateCommentCommand(Guid.NewGuid(), "Content", Guid.NewGuid()),
+                CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_NonExistentProject_ThrowsKeyNotFoundException()
+    public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -56,7 +56,7 @@ public class UpdateCommentCommandHandlerTests
 
         var handler = new UpdateCommentCommandHandler(context);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new UpdateCommentCommand(comment.Id, "Content", Guid.NewGuid()),
                 CancellationToken.None));

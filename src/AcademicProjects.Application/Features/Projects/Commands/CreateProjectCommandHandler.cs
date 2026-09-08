@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Projects.DTOs;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
@@ -22,8 +23,7 @@ public sealed class CreateProjectCommandHandler(
 
         if (category is null)
         {
-            throw new KeyNotFoundException(
-                $"Category with ID '{request.CategoryId}' was not found.");
+            throw new NotFoundException("Category", request.CategoryId);
         }
 
         var project = new Project

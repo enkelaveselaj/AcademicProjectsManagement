@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.Queries;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -30,15 +31,14 @@ public class GetProjectMilestoneByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentMilestone_ReturnsNull()
+    public async Task Handle_NonExistentMilestone_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new GetProjectMilestoneByIdQueryHandler(context);
 
-        var result = await handler.Handle(
-            new GetProjectMilestoneByIdQuery(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new GetProjectMilestoneByIdQuery(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

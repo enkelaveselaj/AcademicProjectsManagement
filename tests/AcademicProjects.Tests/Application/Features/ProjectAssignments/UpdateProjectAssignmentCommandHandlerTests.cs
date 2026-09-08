@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectAssignments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -32,20 +33,19 @@ public class UpdateProjectAssignmentCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentAssignment_ReturnsNull()
+    public async Task Handle_NonExistentAssignment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new UpdateProjectAssignmentCommandHandler(context);
 
-        var result = await handler.Handle(
-            new UpdateProjectAssignmentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Student"),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new UpdateProjectAssignmentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Student"),
+                CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_NonExistentProject_ThrowsKeyNotFoundException()
+    public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -58,7 +58,7 @@ public class UpdateProjectAssignmentCommandHandlerTests
 
         var handler = new UpdateProjectAssignmentCommandHandler(context);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new UpdateProjectAssignmentCommand(assignment.Id, Guid.NewGuid(), Guid.NewGuid(), "Student"),
                 CancellationToken.None));

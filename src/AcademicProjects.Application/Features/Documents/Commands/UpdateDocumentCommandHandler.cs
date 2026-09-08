@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,9 +8,9 @@ namespace AcademicProjects.Application.Features.Documents.Commands;
 
 public sealed class UpdateDocumentCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<UpdateDocumentCommand, DocumentDto?>
+    : IRequestHandler<UpdateDocumentCommand, DocumentDto>
 {
-    public async Task<DocumentDto?> Handle(
+    public async Task<DocumentDto> Handle(
         UpdateDocumentCommand request,
         CancellationToken cancellationToken)
     {
@@ -20,7 +21,7 @@ public sealed class UpdateDocumentCommandHandler(
 
         if (document is null)
         {
-            return null;
+            throw new NotFoundException("Document", request.Id);
         }
 
         var projectExists = await context.Projects
@@ -30,7 +31,7 @@ public sealed class UpdateDocumentCommandHandler(
 
         if (!projectExists)
         {
-            throw new KeyNotFoundException("Project not found.");
+            throw new NotFoundException("Project", request.ProjectId);
         }
 
         document.FileName = request.FileName.Trim();

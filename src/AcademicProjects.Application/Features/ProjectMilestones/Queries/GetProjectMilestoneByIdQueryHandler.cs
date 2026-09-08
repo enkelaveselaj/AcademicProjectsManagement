@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,13 +8,13 @@ namespace AcademicProjects.Application.Features.ProjectMilestones.Queries;
 
 public sealed class GetProjectMilestoneByIdQueryHandler(
     IApplicationDbContext context)
-    : IRequestHandler<GetProjectMilestoneByIdQuery, ProjectMilestoneDto?>
+    : IRequestHandler<GetProjectMilestoneByIdQuery, ProjectMilestoneDto>
 {
-    public async Task<ProjectMilestoneDto?> Handle(
+    public async Task<ProjectMilestoneDto> Handle(
         GetProjectMilestoneByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return await context.ProjectMilestones
+        var milestone = await context.ProjectMilestones
             .AsNoTracking()
             .Where(milestone => milestone.Id == request.Id)
             .Select(milestone => new ProjectMilestoneDto(
@@ -23,5 +24,7 @@ public sealed class GetProjectMilestoneByIdQueryHandler(
                 milestone.CreatedAt,
                 milestone.UpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
+
+        return milestone ?? throw new NotFoundException("ProjectMilestone", request.Id);
     }
 }

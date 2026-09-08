@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,13 +8,13 @@ namespace AcademicProjects.Application.Features.Comments.Queries;
 
 public sealed class GetCommentByIdQueryHandler(
     IApplicationDbContext context)
-    : IRequestHandler<GetCommentByIdQuery, CommentDto?>
+    : IRequestHandler<GetCommentByIdQuery, CommentDto>
 {
-    public async Task<CommentDto?> Handle(
+    public async Task<CommentDto> Handle(
         GetCommentByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return await context.Comments
+        var comment = await context.Comments
             .AsNoTracking()
             .Where(comment => comment.Id == request.Id)
             .Select(comment => new CommentDto(
@@ -23,5 +24,7 @@ public sealed class GetCommentByIdQueryHandler(
                 comment.CreatedAt,
                 comment.UpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
+
+        return comment ?? throw new NotFoundException("Comment", request.Id);
     }
 }

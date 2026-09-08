@@ -42,9 +42,7 @@ public static class CommentsEndpoints
             new GetCommentByIdQuery(id),
             cancellationToken);
 
-        return comment is null
-            ? Results.NotFound()
-            : Results.Ok(comment);
+        return Results.Ok(comment);
     }
 
     private static async Task<IResult> CreateCommentAsync(
@@ -76,9 +74,7 @@ public static class CommentsEndpoints
             command,
             cancellationToken);
 
-        return comment is null
-            ? Results.NotFound()
-            : Results.Ok(comment);
+        return Results.Ok(comment);
     }
 
     private static async Task<IResult> DeleteCommentAsync(
@@ -86,12 +82,10 @@ public static class CommentsEndpoints
         ISender sender,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteCommentCommand(id),
             cancellationToken);
 
-        return deleted
-            ? Results.NoContent()
-            : Results.NotFound();
+        return Results.NoContent();
     }
 }

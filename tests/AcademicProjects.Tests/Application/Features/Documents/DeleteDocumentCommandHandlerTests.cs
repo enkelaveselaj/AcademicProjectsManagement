@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -8,7 +9,7 @@ namespace AcademicProjects.Tests.Application.Features.Documents;
 public class DeleteDocumentCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_ExistingDocument_RemovesItAndReturnsTrue()
+    public async Task Handle_ExistingDocument_RemovesIt()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -21,24 +22,22 @@ public class DeleteDocumentCommandHandlerTests
 
         var handler = new DeleteDocumentCommandHandler(context);
 
-        var result = await handler.Handle(
+        await handler.Handle(
             new DeleteDocumentCommand(document.Id),
             CancellationToken.None);
 
-        Assert.True(result);
         Assert.Empty(context.Documents);
     }
 
     [Fact]
-    public async Task Handle_NonExistentDocument_ReturnsFalse()
+    public async Task Handle_NonExistentDocument_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new DeleteDocumentCommandHandler(context);
 
-        var result = await handler.Handle(
-            new DeleteDocumentCommand(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.False(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new DeleteDocumentCommand(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

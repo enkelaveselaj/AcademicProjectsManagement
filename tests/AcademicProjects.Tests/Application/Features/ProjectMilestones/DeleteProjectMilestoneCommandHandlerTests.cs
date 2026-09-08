@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -8,7 +9,7 @@ namespace AcademicProjects.Tests.Application.Features.ProjectMilestones;
 public class DeleteProjectMilestoneCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_ExistingMilestone_RemovesItAndReturnsTrue()
+    public async Task Handle_ExistingMilestone_RemovesIt()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
@@ -21,24 +22,22 @@ public class DeleteProjectMilestoneCommandHandlerTests
 
         var handler = new DeleteProjectMilestoneCommandHandler(context);
 
-        var result = await handler.Handle(
+        await handler.Handle(
             new DeleteProjectMilestoneCommand(milestone.Id),
             CancellationToken.None);
 
-        Assert.True(result);
         Assert.Empty(context.ProjectMilestones);
     }
 
     [Fact]
-    public async Task Handle_NonExistentMilestone_ReturnsFalse()
+    public async Task Handle_NonExistentMilestone_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new DeleteProjectMilestoneCommandHandler(context);
 
-        var result = await handler.Handle(
-            new DeleteProjectMilestoneCommand(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.False(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new DeleteProjectMilestoneCommand(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

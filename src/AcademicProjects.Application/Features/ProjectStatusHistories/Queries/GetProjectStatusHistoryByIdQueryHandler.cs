@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectStatusHistories.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,13 +8,13 @@ namespace AcademicProjects.Application.Features.ProjectStatusHistories.Queries;
 
 public sealed class GetProjectStatusHistoryByIdQueryHandler(
     IApplicationDbContext context)
-    : IRequestHandler<GetProjectStatusHistoryByIdQuery, ProjectStatusHistoryDto?>
+    : IRequestHandler<GetProjectStatusHistoryByIdQuery, ProjectStatusHistoryDto>
 {
-    public async Task<ProjectStatusHistoryDto?> Handle(
+    public async Task<ProjectStatusHistoryDto> Handle(
         GetProjectStatusHistoryByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return await context.ProjectStatusHistories
+        var history = await context.ProjectStatusHistories
             .AsNoTracking()
             .Where(history => history.Id == request.Id)
             .Select(history => new ProjectStatusHistoryDto(
@@ -24,5 +25,7 @@ public sealed class GetProjectStatusHistoryByIdQueryHandler(
                 history.Comment,
                 history.CreatedAt))
             .FirstOrDefaultAsync(cancellationToken);
+
+        return history ?? throw new NotFoundException("ProjectStatusHistory", request.Id);
     }
 }

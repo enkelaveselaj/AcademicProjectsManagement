@@ -4,4 +4,4 @@ using MediatR;
 namespace AcademicProjects.Application.Features.Comments.Queries;
 
 public sealed record GetCommentByIdQuery(
-    Guid Id) : IRequest<CommentDto?>;
+    Guid Id) : IRequest<CommentDto>;

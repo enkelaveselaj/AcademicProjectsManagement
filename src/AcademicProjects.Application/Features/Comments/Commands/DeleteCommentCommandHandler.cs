@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,9 +7,9 @@ namespace AcademicProjects.Application.Features.Comments.Commands;
 
 public sealed class DeleteCommentCommandHandler(
     IApplicationDbContext context)
-    : IRequestHandler<DeleteCommentCommand, bool>
+    : IRequestHandler<DeleteCommentCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeleteCommentCommand request,
         CancellationToken cancellationToken)
     {
@@ -19,13 +20,11 @@ public sealed class DeleteCommentCommandHandler(
 
         if (comment is null)
         {
-            return false;
+            throw new NotFoundException("Comment", request.Id);
         }
 
         context.Comments.Remove(comment);
 
         await context.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

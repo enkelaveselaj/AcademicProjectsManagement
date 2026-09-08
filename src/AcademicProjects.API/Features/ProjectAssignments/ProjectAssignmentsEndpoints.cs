@@ -42,9 +42,7 @@ public static class ProjectAssignmentsEndpoints
             new GetProjectAssignmentByIdQuery(id),
             cancellationToken);
 
-        return assignment is null
-            ? Results.NotFound()
-            : Results.Ok(assignment);
+        return Results.Ok(assignment);
     }
 
     private static async Task<IResult> CreateProjectAssignmentAsync(
@@ -77,9 +75,7 @@ public static class ProjectAssignmentsEndpoints
             command,
             cancellationToken);
 
-        return assignment is null
-            ? Results.NotFound()
-            : Results.Ok(assignment);
+        return Results.Ok(assignment);
     }
 
     private static async Task<IResult> DeleteProjectAssignmentAsync(
@@ -87,12 +83,10 @@ public static class ProjectAssignmentsEndpoints
         ISender sender,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteProjectAssignmentCommand(id),
             cancellationToken);
 
-        return deleted
-            ? Results.NoContent()
-            : Results.NotFound();
+        return Results.NoContent();
     }
 }

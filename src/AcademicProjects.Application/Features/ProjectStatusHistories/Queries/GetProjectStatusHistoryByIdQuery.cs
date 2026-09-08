@@ -4,4 +4,4 @@ using MediatR;
 namespace AcademicProjects.Application.Features.ProjectStatusHistories.Queries;
 
 public sealed record GetProjectStatusHistoryByIdQuery(
-    Guid Id) : IRequest<ProjectStatusHistoryDto?>;
+    Guid Id) : IRequest<ProjectStatusHistoryDto>;

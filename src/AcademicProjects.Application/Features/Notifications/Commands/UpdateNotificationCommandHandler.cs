@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Notifications.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Notifications.Commands;
 
 public sealed class UpdateNotificationCommandHandler
-    : IRequestHandler<UpdateNotificationCommand, NotificationDto?>
+    : IRequestHandler<UpdateNotificationCommand, NotificationDto>
 {
     private readonly IApplicationDbContext _context;
 
@@ -15,7 +16,7 @@ public sealed class UpdateNotificationCommandHandler
         _context = context;
     }
 
-    public async Task<NotificationDto?> Handle(
+    public async Task<NotificationDto> Handle(
         UpdateNotificationCommand request,
         CancellationToken cancellationToken)
     {
@@ -25,7 +26,7 @@ public sealed class UpdateNotificationCommandHandler
                 cancellationToken);
 
         if (notification is null)
-            return null;
+            throw new NotFoundException("Notification", request.Id);
 
         notification.Message = request.Message;
         notification.Type = request.Type;

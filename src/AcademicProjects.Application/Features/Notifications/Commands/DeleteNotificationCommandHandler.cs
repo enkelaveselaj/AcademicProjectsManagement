@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -5,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Notifications.Commands;
 
 public sealed class DeleteNotificationCommandHandler
-    : IRequestHandler<DeleteNotificationCommand, bool>
+    : IRequestHandler<DeleteNotificationCommand>
 {
     private readonly IApplicationDbContext _context;
 
@@ -14,7 +15,7 @@ public sealed class DeleteNotificationCommandHandler
         _context = context;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeleteNotificationCommand request,
         CancellationToken cancellationToken)
     {
@@ -24,12 +25,10 @@ public sealed class DeleteNotificationCommandHandler
                 cancellationToken);
 
         if (notification is null)
-            return false;
+            throw new NotFoundException("Notification", request.Id);
 
         _context.Notifications.Remove(notification);
 
         await _context.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

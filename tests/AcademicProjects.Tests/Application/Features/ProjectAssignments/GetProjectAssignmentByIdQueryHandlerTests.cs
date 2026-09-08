@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectAssignments.Queries;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -30,15 +31,14 @@ public class GetProjectAssignmentByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentAssignment_ReturnsNull()
+    public async Task Handle_NonExistentAssignment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new GetProjectAssignmentByIdQueryHandler(context);
 
-        var result = await handler.Handle(
-            new GetProjectAssignmentByIdQuery(Guid.NewGuid()),
-            CancellationToken.None);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(
+                new GetProjectAssignmentByIdQuery(Guid.NewGuid()),
+                CancellationToken.None));
     }
 }

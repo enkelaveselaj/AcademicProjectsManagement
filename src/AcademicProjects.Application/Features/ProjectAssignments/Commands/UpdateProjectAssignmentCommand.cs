@@ -7,4 +7,4 @@ public sealed record UpdateProjectAssignmentCommand(
     Guid Id,
     Guid ProjectId,
     Guid UserId,
-    string Role) : IRequest<ProjectAssignmentDto?>;
+    string Role) : IRequest<ProjectAssignmentDto>;

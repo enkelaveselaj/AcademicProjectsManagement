@@ -9,4 +9,4 @@ public sealed record UpdateNotificationCommand(
     string Message,
     NotificationType Type,
     bool IsRead,
-    Guid UserId) : IRequest<NotificationDto?>;
+    Guid UserId) : IRequest<NotificationDto>;

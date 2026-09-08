@@ -42,9 +42,7 @@ public static class CategoriesEndpoints
             new GetCategoryByIdQuery(id),
             cancellationToken);
 
-        return category is null
-            ? Results.NotFound()
-            : Results.Ok(category);
+        return Results.Ok(category);
     }
 
     private static async Task<IResult> CreateCategoryAsync(
@@ -76,9 +74,7 @@ public static class CategoriesEndpoints
             command,
             cancellationToken);
 
-        return category is null
-            ? Results.NotFound()
-            : Results.Ok(category);
+        return Results.Ok(category);
     }
 
     private static async Task<IResult> DeleteCategoryAsync(
@@ -86,12 +82,10 @@ public static class CategoriesEndpoints
         ISender sender,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteCategoryCommand(id),
             cancellationToken);
 
-        return deleted
-            ? Results.NoContent()
-            : Results.NotFound();
+        return Results.NoContent();
     }
 }
