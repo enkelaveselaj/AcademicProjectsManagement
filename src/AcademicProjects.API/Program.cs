@@ -7,6 +7,8 @@ using AcademicProjects.API.Features.Projects;
 using AcademicProjects.API.Features.Documents;
 using AcademicProjects.API.Features.Comments;
 using AcademicProjects.API.Features.Notifications;
+using AcademicProjects.API.Features.ProjectMilestones;
+using AcademicProjects.API.Features.ProjectAssignments;
 using AcademicProjects.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +40,8 @@ app.MapProjectEndpoints();
 app.MapDocumentEndpoints();
 app.MapCommentEndpoints();
 app.MapNotificationEndpoints();
+app.MapProjectMilestoneEndpoints();
+app.MapProjectAssignmentEndpoints();
 
 await app.Services.SeedIdentityRolesAsync();
 
