@@ -10,6 +10,12 @@ public static class ProblemDetailsFactory
         exception switch
         {
             ValidationException validationException => CreateValidationProblem(validationException),
+            ForbiddenAccessException forbiddenException => new ProblemDetails
+            {
+                Status = StatusCodes.Status403Forbidden,
+                Title = "Access denied.",
+                Detail = forbiddenException.Message
+            },
             NotFoundException notFoundException => new ProblemDetails
             {
                 Status = StatusCodes.Status404NotFound,

@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -7,13 +8,19 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Categories.Commands;
 
 public sealed class UpdateCategoryCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser)
     : IRequestHandler<UpdateCategoryCommand, CategoryDto>
 {
     public async Task<CategoryDto> Handle(
         UpdateCategoryCommand request,
         CancellationToken cancellationToken)
     {
+        if (!currentUser.IsAdministrator())
+        {
+            throw new ForbiddenAccessException("Only administrators can update categories.");
+        }
+
         var category = await context.Categories
             .FirstOrDefaultAsync(
                 category => category.Id == request.Id,

@@ -15,7 +15,7 @@ public class UpdateCategoryCommandHandlerTests
         context.Categories.Add(category);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateCategoryCommandHandler(context);
+        var handler = new UpdateCategoryCommandHandler(context, TestCurrentUserService.AsAdministrator());
 
         var result = await handler.Handle(
             new UpdateCategoryCommand(category.Id, " New Name ", " New Description "),
@@ -30,11 +30,27 @@ public class UpdateCategoryCommandHandlerTests
     public async Task Handle_NonExistentCategory_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new UpdateCategoryCommandHandler(context);
+        var handler = new UpdateCategoryCommandHandler(context, TestCurrentUserService.AsAdministrator());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new UpdateCategoryCommand(Guid.NewGuid(), "Name", "Description"),
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_NonAdministrator_ThrowsForbiddenAccessException()
+    {
+        using var context = TestDbContextFactory.Create();
+        var category = new Category { Name = "Old Name" };
+        context.Categories.Add(category);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new UpdateCategoryCommandHandler(context, TestCurrentUserService.AsStudent());
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+            handler.Handle(
+                new UpdateCategoryCommand(category.Id, "New Name", "Description"),
                 CancellationToken.None));
     }
 }

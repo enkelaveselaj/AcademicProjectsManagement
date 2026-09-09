@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -6,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Projects.Commands;
 
 public sealed class DeleteProjectCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser)
     : IRequestHandler<DeleteProjectCommand>
 {
     public async Task Handle(
@@ -21,6 +23,11 @@ public sealed class DeleteProjectCommandHandler(
         if (project is null)
         {
             throw new NotFoundException("Project", request.Id);
+        }
+
+        if (!currentUser.IsAdministrator() && project.CreatedById != currentUser.GetUserId())
+        {
+            throw new ForbiddenAccessException("Only the project's creator or an administrator can delete this project.");
         }
 
         context.Projects.Remove(project);

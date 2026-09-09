@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -8,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Documents.Commands;
 
 public sealed class CreateDocumentCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<CreateDocumentCommand, DocumentDto>
 {
     public async Task<DocumentDto> Handle(
@@ -25,10 +28,19 @@ public sealed class CreateDocumentCommandHandler(
             throw new NotFoundException("Project", request.ProjectId);
         }
 
+        var userId = currentUser.GetUserId();
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(request.ProjectId, userId, cancellationToken))
+        {
+            throw new ForbiddenAccessException("Only members of this project can upload documents to it.");
+        }
+
         var document = new Document
         {
             FileName = request.FileName.Trim(),
             FilePath = request.FilePath.Trim(),
+            UploadedById = userId,
             ProjectId = request.ProjectId
         };
 
@@ -40,6 +52,7 @@ public sealed class CreateDocumentCommandHandler(
             document.Id,
             document.FileName,
             document.FilePath,
+            document.UploadedById,
             document.ProjectId,
             document.CreatedAt,
             document.UpdatedAt);

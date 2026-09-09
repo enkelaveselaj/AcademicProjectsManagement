@@ -16,6 +16,8 @@ public class Project : AuditableEntity
 
     public Category Category { get; set; } = null!;
 
+    public Guid CreatedById { get; set; }
+
     public ICollection<ProjectMilestone> Milestones { get; set; }
         = new List<ProjectMilestone>();
 

@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.Commands;
 using AcademicProjects.Tests.TestHelpers;
 
@@ -9,7 +10,7 @@ public class CreateCategoryCommandHandlerTests
     public async Task Handle_ValidCommand_CreatesCategoryAndReturnsDto()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new CreateCategoryCommandHandler(context);
+        var handler = new CreateCategoryCommandHandler(context, TestCurrentUserService.AsAdministrator());
 
         var result = await handler.Handle(
             new CreateCategoryCommand(" Machine Learning ", " AI related projects "),
@@ -25,12 +26,24 @@ public class CreateCategoryCommandHandlerTests
     public async Task Handle_WhitespaceDescription_StoresNull()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new CreateCategoryCommandHandler(context);
+        var handler = new CreateCategoryCommandHandler(context, TestCurrentUserService.AsAdministrator());
 
         var result = await handler.Handle(
             new CreateCategoryCommand("Web Development", "   "),
             CancellationToken.None);
 
         Assert.Null(result.Description);
+    }
+
+    [Fact]
+    public async Task Handle_NonAdministrator_ThrowsForbiddenAccessException()
+    {
+        using var context = TestDbContextFactory.Create();
+        var handler = new CreateCategoryCommandHandler(context, TestCurrentUserService.AsMentor());
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+            handler.Handle(
+                new CreateCategoryCommand("Category", null),
+                CancellationToken.None));
     }
 }

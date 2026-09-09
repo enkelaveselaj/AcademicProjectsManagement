@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -7,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Comments.Commands;
 
 public sealed class UpdateCommentCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser)
     : IRequestHandler<UpdateCommentCommand, CommentDto>
 {
     public async Task<CommentDto> Handle(
@@ -22,6 +24,11 @@ public sealed class UpdateCommentCommandHandler(
         if (comment is null)
         {
             throw new NotFoundException("Comment", request.Id);
+        }
+
+        if (!currentUser.IsAdministrator() && comment.AuthorId != currentUser.GetUserId())
+        {
+            throw new ForbiddenAccessException("Only the author or an administrator can edit this comment.");
         }
 
         var projectExists = await context.Projects
@@ -42,6 +49,7 @@ public sealed class UpdateCommentCommandHandler(
         return new CommentDto(
             comment.Id,
             comment.Content,
+            comment.AuthorId,
             comment.ProjectId,
             comment.CreatedAt,
             comment.UpdatedAt);

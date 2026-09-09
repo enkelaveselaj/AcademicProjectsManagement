@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectAssignments.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -8,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.ProjectAssignments.Commands;
 
 public sealed class CreateProjectAssignmentCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<CreateProjectAssignmentCommand, ProjectAssignmentDto>
 {
     public async Task<ProjectAssignmentDto> Handle(
@@ -23,6 +26,12 @@ public sealed class CreateProjectAssignmentCommandHandler(
         if (!projectExists)
         {
             throw new NotFoundException("Project", request.ProjectId);
+        }
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(request.ProjectId, currentUser.GetUserId(), cancellationToken))
+        {
+            throw new ForbiddenAccessException("Only a project member or an administrator can assign users to this project.");
         }
 
         var assignment = new ProjectAssignment

@@ -9,18 +9,19 @@ namespace AcademicProjects.Tests.Application.Features.Comments;
 public class UpdateCommentCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_ExistingComment_UpdatesAndReturnsDto()
+    public async Task Handle_Author_UpdatesAndReturnsDto()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        var comment = new Comment { Content = "Old", ProjectId = project.Id, Project = project };
+        var author = TestCurrentUserService.AsStudent();
+        var comment = new Comment { Content = "Old", AuthorId = author.UserId!.Value, ProjectId = project.Id, Project = project };
         context.Categories.Add(category);
         context.Projects.Add(project);
         context.Comments.Add(comment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateCommentCommandHandler(context);
+        var handler = new UpdateCommentCommandHandler(context, author);
 
         var result = await handler.Handle(
             new UpdateCommentCommand(comment.Id, " New content ", project.Id),
@@ -34,7 +35,7 @@ public class UpdateCommentCommandHandlerTests
     public async Task Handle_NonExistentComment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new UpdateCommentCommandHandler(context);
+        var handler = new UpdateCommentCommandHandler(context, TestCurrentUserService.AsAdministrator());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -48,17 +49,41 @@ public class UpdateCommentCommandHandlerTests
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        var comment = new Comment { Content = "Old", ProjectId = project.Id, Project = project };
+        var author = TestCurrentUserService.AsStudent();
+        var comment = new Comment { Content = "Old", AuthorId = author.UserId!.Value, ProjectId = project.Id, Project = project };
         context.Categories.Add(category);
         context.Projects.Add(project);
         context.Comments.Add(comment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateCommentCommandHandler(context);
+        var handler = new UpdateCommentCommandHandler(context, author);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new UpdateCommentCommand(comment.Id, "Content", Guid.NewGuid()),
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_DifferentStudent_ThrowsForbiddenAccessException()
+    {
+        // A student must not be able to edit another student's comment.
+        using var context = TestDbContextFactory.Create();
+        var category = new Category { Name = "Category" };
+        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        var author = TestCurrentUserService.AsStudent();
+        var comment = new Comment { Content = "Old", AuthorId = author.UserId!.Value, ProjectId = project.Id, Project = project };
+        context.Categories.Add(category);
+        context.Projects.Add(project);
+        context.Comments.Add(comment);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var otherStudent = TestCurrentUserService.AsStudent();
+        var handler = new UpdateCommentCommandHandler(context, otherStudent);
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+            handler.Handle(
+                new UpdateCommentCommand(comment.Id, "Hijacked content", project.Id),
                 CancellationToken.None));
     }
 }

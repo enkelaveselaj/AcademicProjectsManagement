@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Projects.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -8,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Projects.Commands;
 
 public sealed class UpdateProjectCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<UpdateProjectCommand, ProjectDto>
 {
     public async Task<ProjectDto> Handle(
@@ -23,6 +26,12 @@ public sealed class UpdateProjectCommandHandler(
         if (project is null)
         {
             throw new NotFoundException("Project", request.Id);
+        }
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(project.Id, currentUser.GetUserId(), cancellationToken))
+        {
+            throw new ForbiddenAccessException("Only a project member or an administrator can update this project.");
         }
 
         var category = await context.Categories
@@ -68,6 +77,7 @@ public sealed class UpdateProjectCommandHandler(
             project.Description,
             project.Status,
             project.CategoryId,
-            category.Name);
+            category.Name,
+            project.CreatedById);
     }
 }

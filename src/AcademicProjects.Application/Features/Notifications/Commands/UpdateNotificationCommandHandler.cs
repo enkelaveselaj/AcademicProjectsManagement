@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Notifications.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -6,21 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AcademicProjects.Application.Features.Notifications.Commands;
 
-public sealed class UpdateNotificationCommandHandler
+public sealed class UpdateNotificationCommandHandler(
+    IApplicationDbContext context,
+    ICurrentUserService currentUser)
     : IRequestHandler<UpdateNotificationCommand, NotificationDto>
 {
-    private readonly IApplicationDbContext _context;
-
-    public UpdateNotificationCommandHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<NotificationDto> Handle(
         UpdateNotificationCommand request,
         CancellationToken cancellationToken)
     {
-        var notification = await _context.Notifications
+        var notification = await context.Notifications
             .FirstOrDefaultAsync(
                 n => n.Id == request.Id,
                 cancellationToken);
@@ -28,12 +24,17 @@ public sealed class UpdateNotificationCommandHandler
         if (notification is null)
             throw new NotFoundException("Notification", request.Id);
 
+        if (!currentUser.IsAdministrator() && notification.UserId != currentUser.GetUserId())
+        {
+            throw new ForbiddenAccessException("Only the recipient or an administrator can update this notification.");
+        }
+
         notification.Message = request.Message;
         notification.Type = request.Type;
         notification.IsRead = request.IsRead;
         notification.UserId = request.UserId;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
         return new NotificationDto(
             notification.Id,

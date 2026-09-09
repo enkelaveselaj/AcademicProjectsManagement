@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -6,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Comments.Commands;
 
 public sealed class DeleteCommentCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser)
     : IRequestHandler<DeleteCommentCommand>
 {
     public async Task Handle(
@@ -21,6 +23,11 @@ public sealed class DeleteCommentCommandHandler(
         if (comment is null)
         {
             throw new NotFoundException("Comment", request.Id);
+        }
+
+        if (!currentUser.IsAdministrator() && comment.AuthorId != currentUser.GetUserId())
+        {
+            throw new ForbiddenAccessException("Only the author or an administrator can delete this comment.");
         }
 
         context.Comments.Remove(comment);

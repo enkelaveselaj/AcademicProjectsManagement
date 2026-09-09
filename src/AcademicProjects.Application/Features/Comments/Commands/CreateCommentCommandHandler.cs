@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -8,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Comments.Commands;
 
 public sealed class CreateCommentCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<CreateCommentCommand, CommentDto>
 {
     public async Task<CommentDto> Handle(
@@ -25,9 +28,18 @@ public sealed class CreateCommentCommandHandler(
             throw new NotFoundException("Project", request.ProjectId);
         }
 
+        var userId = currentUser.GetUserId();
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(request.ProjectId, userId, cancellationToken))
+        {
+            throw new ForbiddenAccessException("Only members of this project can comment on it.");
+        }
+
         var comment = new Comment
         {
             Content = request.Content.Trim(),
+            AuthorId = userId,
             ProjectId = request.ProjectId
         };
 
@@ -38,6 +50,7 @@ public sealed class CreateCommentCommandHandler(
         return new CommentDto(
             comment.Id,
             comment.Content,
+            comment.AuthorId,
             comment.ProjectId,
             comment.CreatedAt,
             comment.UpdatedAt);

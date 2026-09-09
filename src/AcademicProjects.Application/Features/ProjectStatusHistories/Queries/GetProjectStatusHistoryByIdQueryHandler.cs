@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectStatusHistories.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -7,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.ProjectStatusHistories.Queries;
 
 public sealed class GetProjectStatusHistoryByIdQueryHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<GetProjectStatusHistoryByIdQuery, ProjectStatusHistoryDto>
 {
     public async Task<ProjectStatusHistoryDto> Handle(
@@ -26,6 +29,17 @@ public sealed class GetProjectStatusHistoryByIdQueryHandler(
                 history.CreatedAt))
             .FirstOrDefaultAsync(cancellationToken);
 
-        return history ?? throw new NotFoundException("ProjectStatusHistory", request.Id);
+        if (history is null)
+        {
+            throw new NotFoundException("ProjectStatusHistory", request.Id);
+        }
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(history.ProjectId, currentUser.GetUserId(), cancellationToken))
+        {
+            throw new ForbiddenAccessException("You do not have access to this project's status history.");
+        }
+
+        return history;
     }
 }

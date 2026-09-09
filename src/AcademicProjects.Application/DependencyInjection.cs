@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Behaviors;
 using FluentValidation;
 using MediatR;
@@ -21,6 +22,8 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(
             typeof(DependencyInjection).Assembly);
+
+        services.AddScoped<ProjectAccessService>();
 
         return services;
     }

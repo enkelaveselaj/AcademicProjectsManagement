@@ -8,6 +8,8 @@ public class Document : AuditableEntity
 
     public string FilePath { get; set; } = string.Empty;
 
+    public Guid UploadedById { get; set; }
+
     public Guid ProjectId { get; set; }
 
     public Project Project { get; set; } = null!;

@@ -6,6 +6,7 @@ public class Comment : AuditableEntity
 {
     public string Content { get; set; } = string.Empty;
 
+    public Guid AuthorId { get; set; }
 
     public Guid ProjectId { get; set; }
 

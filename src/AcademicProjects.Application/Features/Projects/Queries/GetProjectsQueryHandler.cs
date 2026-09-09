@@ -22,7 +22,8 @@ public sealed class GetProjectsQueryHandler(
                 project.Description,
                 project.Status,
                 project.CategoryId,
-                project.Category.Name))
+                project.Category.Name,
+                project.CreatedById))
             .ToListAsync(cancellationToken);
     }
 }

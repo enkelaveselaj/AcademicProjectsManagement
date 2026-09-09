@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -7,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.ProjectMilestones.Queries;
 
 public sealed class GetProjectMilestoneByIdQueryHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<GetProjectMilestoneByIdQuery, ProjectMilestoneDto>
 {
     public async Task<ProjectMilestoneDto> Handle(
@@ -25,6 +28,17 @@ public sealed class GetProjectMilestoneByIdQueryHandler(
                 milestone.UpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
 
-        return milestone ?? throw new NotFoundException("ProjectMilestone", request.Id);
+        if (milestone is null)
+        {
+            throw new NotFoundException("ProjectMilestone", request.Id);
+        }
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(milestone.ProjectId, currentUser.GetUserId(), cancellationToken))
+        {
+            throw new ForbiddenAccessException("You do not have access to this milestone.");
+        }
+
+        return milestone;
     }
 }

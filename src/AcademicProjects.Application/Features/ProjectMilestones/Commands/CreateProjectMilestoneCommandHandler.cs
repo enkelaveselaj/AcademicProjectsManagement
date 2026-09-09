@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -8,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 
 public sealed class CreateProjectMilestoneCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<CreateProjectMilestoneCommand, ProjectMilestoneDto>
 {
     public async Task<ProjectMilestoneDto> Handle(
@@ -23,6 +26,12 @@ public sealed class CreateProjectMilestoneCommandHandler(
         if (!projectExists)
         {
             throw new NotFoundException("Project", request.ProjectId);
+        }
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(request.ProjectId, currentUser.GetUserId(), cancellationToken))
+        {
+            throw new ForbiddenAccessException("Only a project member or an administrator can create milestones.");
         }
 
         var milestone = new ProjectMilestone

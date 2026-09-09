@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -7,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 
 public sealed class UpdateProjectMilestoneCommandHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<UpdateProjectMilestoneCommand, ProjectMilestoneDto>
 {
     public async Task<ProjectMilestoneDto> Handle(
@@ -22,6 +25,12 @@ public sealed class UpdateProjectMilestoneCommandHandler(
         if (milestone is null)
         {
             throw new NotFoundException("ProjectMilestone", request.Id);
+        }
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(milestone.ProjectId, currentUser.GetUserId(), cancellationToken))
+        {
+            throw new ForbiddenAccessException("Only a project member or an administrator can update this milestone.");
         }
 
         var projectExists = await context.Projects

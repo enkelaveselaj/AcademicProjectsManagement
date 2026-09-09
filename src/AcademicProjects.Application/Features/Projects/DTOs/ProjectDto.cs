@@ -8,4 +8,5 @@ public sealed record ProjectDto(
     string? Description,
     ProjectStatus Status,
     Guid CategoryId,
-    string CategoryName);
+    string CategoryName,
+    Guid CreatedById);

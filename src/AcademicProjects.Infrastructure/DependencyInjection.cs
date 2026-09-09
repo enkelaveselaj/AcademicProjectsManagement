@@ -46,6 +46,9 @@ public static class DependencyInjection
         services.AddScoped<IAccessTokenGenerator, JwtAccessTokenGenerator>();
         services.AddScoped<IAuthenticationService, IdentityAuthenticationService>();
 
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+
         services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
