@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Authorization;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.Commands;
 using AcademicProjects.Domain.Entities;
@@ -22,7 +23,7 @@ public class CreateProjectMilestoneCommandHandlerTests
         context.ProjectAssignments.Add(mentorAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context));
+        var handler = new CreateProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new CreateProjectMilestoneCommand(" Literature Review ", project.Id),
@@ -40,7 +41,7 @@ public class CreateProjectMilestoneCommandHandlerTests
         var handler = new CreateProjectMilestoneCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -62,7 +63,7 @@ public class CreateProjectMilestoneCommandHandlerTests
         context.ProjectAssignments.Add(assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateProjectMilestoneCommandHandler(context, student, new ProjectAccessService(context));
+        var handler = new CreateProjectMilestoneCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new CreateProjectMilestoneCommand("Milestone", project.Id),
@@ -85,7 +86,7 @@ public class CreateProjectMilestoneCommandHandlerTests
         var handler = new CreateProjectMilestoneCommandHandler(
             context,
             TestCurrentUserService.AsStudent(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

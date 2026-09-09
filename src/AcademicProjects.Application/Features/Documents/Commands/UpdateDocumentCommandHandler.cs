@@ -1,7 +1,9 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Documents.DTOs;
 using AcademicProjects.Application.Interfaces;
+using AcademicProjects.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +12,8 @@ namespace AcademicProjects.Application.Features.Documents.Commands;
 public sealed class UpdateDocumentCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess)
+    ProjectAccessService projectAccess,
+    ProjectNotificationService notifier)
     : IRequestHandler<UpdateDocumentCommand, DocumentDto>
 {
     public async Task<DocumentDto> Handle(
@@ -33,12 +36,12 @@ public sealed class UpdateDocumentCommandHandler(
             throw new ForbiddenAccessException("Only a project member or an administrator can update this document.");
         }
 
-        var projectExists = await context.Projects
-            .AnyAsync(
-                project => project.Id == request.ProjectId,
-                cancellationToken);
+        var projectTitle = await context.Projects
+            .Where(project => project.Id == request.ProjectId)
+            .Select(project => project.Title)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!projectExists)
+        if (projectTitle is null)
         {
             throw new NotFoundException("Project", request.ProjectId);
         }
@@ -46,6 +49,13 @@ public sealed class UpdateDocumentCommandHandler(
         document.FileName = request.FileName.Trim();
         document.FilePath = request.FilePath.Trim();
         document.ProjectId = request.ProjectId;
+
+        await notifier.NotifyMembersAsync(
+            request.ProjectId,
+            currentUser.GetUserId(),
+            $"Document updated on project '{projectTitle}': {document.FileName}.",
+            NotificationType.Information,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 

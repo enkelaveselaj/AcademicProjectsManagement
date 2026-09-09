@@ -1,8 +1,10 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Comments.DTOs;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
+using AcademicProjects.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,19 +13,20 @@ namespace AcademicProjects.Application.Features.Comments.Commands;
 public sealed class CreateCommentCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess)
+    ProjectAccessService projectAccess,
+    ProjectNotificationService notifier)
     : IRequestHandler<CreateCommentCommand, CommentDto>
 {
     public async Task<CommentDto> Handle(
         CreateCommentCommand request,
         CancellationToken cancellationToken)
     {
-        var projectExists = await context.Projects
-            .AnyAsync(
-                project => project.Id == request.ProjectId,
-                cancellationToken);
+        var projectTitle = await context.Projects
+            .Where(project => project.Id == request.ProjectId)
+            .Select(project => project.Title)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!projectExists)
+        if (projectTitle is null)
         {
             throw new NotFoundException("Project", request.ProjectId);
         }
@@ -44,6 +47,13 @@ public sealed class CreateCommentCommandHandler(
         };
 
         context.Comments.Add(comment);
+
+        await notifier.NotifyMembersAsync(
+            request.ProjectId,
+            userId,
+            $"New comment on project '{projectTitle}'.",
+            NotificationType.Information,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 

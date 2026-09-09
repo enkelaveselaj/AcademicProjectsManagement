@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Projects.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -20,7 +21,7 @@ public class DeleteProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteProjectCommandHandler(context, creator);
+        var handler = new DeleteProjectCommandHandler(context, creator, new ProjectNotificationService(context));
 
         await handler.Handle(
             new DeleteProjectCommand(project.Id),
@@ -39,7 +40,7 @@ public class DeleteProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsAdministrator());
+        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context));
 
         await handler.Handle(
             new DeleteProjectCommand(project.Id),
@@ -52,7 +53,7 @@ public class DeleteProjectCommandHandlerTests
     public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsAdministrator());
+        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -71,7 +72,7 @@ public class DeleteProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsMentor());
+        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsMentor(), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

@@ -1,5 +1,6 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.ProjectAssignments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -23,7 +24,7 @@ public class UpdateProjectAssignmentCommandHandlerTests
         context.ProjectAssignments.AddRange(mentorAssignment, assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectAssignmentCommandHandler(context, mentor, new ProjectAccessService(context));
+        var handler = new UpdateProjectAssignmentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
         var newUserId = Guid.NewGuid();
 
         var result = await handler.Handle(
@@ -42,7 +43,7 @@ public class UpdateProjectAssignmentCommandHandlerTests
         var handler = new UpdateProjectAssignmentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -63,7 +64,7 @@ public class UpdateProjectAssignmentCommandHandlerTests
         context.ProjectAssignments.Add(assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectAssignmentCommandHandler(context, admin, new ProjectAccessService(context));
+        var handler = new UpdateProjectAssignmentCommandHandler(context, admin, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -86,7 +87,7 @@ public class UpdateProjectAssignmentCommandHandlerTests
         var handler = new UpdateProjectAssignmentCommandHandler(
             context,
             TestCurrentUserService.AsMentor(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

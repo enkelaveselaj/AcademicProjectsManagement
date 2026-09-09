@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Authorization;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.Commands;
 using AcademicProjects.Domain.Entities;
@@ -22,7 +23,7 @@ public class CreateCommentCommandHandlerTests
         context.ProjectAssignments.Add(assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateCommentCommandHandler(context, student, new ProjectAccessService(context));
+        var handler = new CreateCommentCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new CreateCommentCommand(" Looks good ", project.Id),
@@ -48,7 +49,7 @@ public class CreateCommentCommandHandlerTests
         context.ProjectAssignments.Add(assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateCommentCommandHandler(context, mentor, new ProjectAccessService(context));
+        var handler = new CreateCommentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new CreateCommentCommand("Good progress, keep it up.", project.Id),
@@ -59,13 +60,39 @@ public class CreateCommentCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ProjectMentor_NotifiesOtherMembersButNotTheAuthor()
+    {
+        using var context = TestDbContextFactory.Create();
+        var category = new Category { Name = "Category" };
+        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        var mentor = TestCurrentUserService.AsMentor();
+        var student = TestCurrentUserService.AsStudent();
+        var mentorAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = mentor.UserId!.Value, Role = "Mentor" };
+        var studentAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = student.UserId!.Value, Role = "Student" };
+        context.Categories.Add(category);
+        context.Projects.Add(project);
+        context.ProjectAssignments.AddRange(mentorAssignment, studentAssignment);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new CreateCommentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+
+        await handler.Handle(
+            new CreateCommentCommand("Good progress, keep it up.", project.Id),
+            CancellationToken.None);
+
+        var notification = Assert.Single(context.Notifications);
+        Assert.Equal(student.UserId, notification.UserId);
+        Assert.Contains("New comment", notification.Message);
+    }
+
+    [Fact]
     public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new CreateCommentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -86,7 +113,7 @@ public class CreateCommentCommandHandlerTests
         var handler = new CreateCommentCommandHandler(
             context,
             TestCurrentUserService.AsStudent(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

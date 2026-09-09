@@ -1,8 +1,10 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.ProjectMilestones.DTOs;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
+using AcademicProjects.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,19 +13,20 @@ namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 public sealed class CreateProjectMilestoneCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess)
+    ProjectAccessService projectAccess,
+    ProjectNotificationService notifier)
     : IRequestHandler<CreateProjectMilestoneCommand, ProjectMilestoneDto>
 {
     public async Task<ProjectMilestoneDto> Handle(
         CreateProjectMilestoneCommand request,
         CancellationToken cancellationToken)
     {
-        var projectExists = await context.Projects
-            .AnyAsync(
-                project => project.Id == request.ProjectId,
-                cancellationToken);
+        var projectTitle = await context.Projects
+            .Where(project => project.Id == request.ProjectId)
+            .Select(project => project.Title)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!projectExists)
+        if (projectTitle is null)
         {
             throw new NotFoundException("Project", request.ProjectId);
         }
@@ -41,6 +44,13 @@ public sealed class CreateProjectMilestoneCommandHandler(
         };
 
         context.ProjectMilestones.Add(milestone);
+
+        await notifier.NotifyMembersAsync(
+            request.ProjectId,
+            currentUser.GetUserId(),
+            $"New milestone on project '{projectTitle}': {milestone.Title}.",
+            NotificationType.Information,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 

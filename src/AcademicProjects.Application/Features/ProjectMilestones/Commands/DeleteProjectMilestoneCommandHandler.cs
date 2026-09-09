@@ -1,6 +1,8 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Interfaces;
+using AcademicProjects.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +11,8 @@ namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 public sealed class DeleteProjectMilestoneCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess)
+    ProjectAccessService projectAccess,
+    ProjectNotificationService notifier)
     : IRequestHandler<DeleteProjectMilestoneCommand>
 {
     public async Task Handle(
@@ -31,6 +34,18 @@ public sealed class DeleteProjectMilestoneCommandHandler(
         {
             throw new ForbiddenAccessException("Only a project member or an administrator can delete this milestone.");
         }
+
+        var projectTitle = await context.Projects
+            .Where(project => project.Id == milestone.ProjectId)
+            .Select(project => project.Title)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        await notifier.NotifyMembersAsync(
+            milestone.ProjectId,
+            currentUser.GetUserId(),
+            $"Milestone removed from project '{projectTitle}': {milestone.Title}.",
+            NotificationType.Information,
+            cancellationToken);
 
         context.ProjectMilestones.Remove(milestone);
 

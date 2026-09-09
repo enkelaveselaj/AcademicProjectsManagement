@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Authorization;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.Commands;
 using AcademicProjects.Domain.Entities;
@@ -24,7 +25,7 @@ public class DeleteProjectMilestoneCommandHandlerTests
         context.ProjectMilestones.Add(milestone);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context));
+        var handler = new DeleteProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await handler.Handle(
             new DeleteProjectMilestoneCommand(milestone.Id),
@@ -40,7 +41,7 @@ public class DeleteProjectMilestoneCommandHandlerTests
         var handler = new DeleteProjectMilestoneCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -63,7 +64,7 @@ public class DeleteProjectMilestoneCommandHandlerTests
         var handler = new DeleteProjectMilestoneCommandHandler(
             context,
             TestCurrentUserService.AsMentor(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

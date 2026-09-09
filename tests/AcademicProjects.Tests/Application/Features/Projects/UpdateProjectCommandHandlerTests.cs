@@ -1,5 +1,6 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Projects.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -22,7 +23,7 @@ public class UpdateProjectCommandHandlerTests
         context.ProjectAssignments.Add(mentorAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, mentor, new ProjectAccessService(context));
+        var handler = new UpdateProjectCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateProjectCommand(project.Id, " New Title ", " New Description ", ProjectStatus.Draft, category.Id),
@@ -47,7 +48,7 @@ public class UpdateProjectCommandHandlerTests
         context.ProjectAssignments.Add(studentAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, student, new ProjectAccessService(context));
+        var handler = new UpdateProjectCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateProjectCommand(project.Id, "New Title", "New Description", ProjectStatus.Draft, category.Id),
@@ -63,7 +64,7 @@ public class UpdateProjectCommandHandlerTests
         var handler = new UpdateProjectCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -82,7 +83,7 @@ public class UpdateProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context));
+        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -101,7 +102,7 @@ public class UpdateProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context));
+        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await handler.Handle(
             new UpdateProjectCommand(project.Id, "Title", "Description", ProjectStatus.Submitted, category.Id, " Ready for review "),
@@ -115,6 +116,33 @@ public class UpdateProjectCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_StatusChanged_NotifiesOtherMembersWithOldAndNewStatus()
+    {
+        using var context = TestDbContextFactory.Create();
+        var category = new Category { Name = "Category" };
+        var project = new Project { Title = "Title", Description = "Description", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        var mentor = TestCurrentUserService.AsMentor();
+        var student = TestCurrentUserService.AsStudent();
+        var mentorAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = mentor.UserId!.Value, Role = "Mentor" };
+        var studentAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = student.UserId!.Value, Role = "Student" };
+        context.Categories.Add(category);
+        context.Projects.Add(project);
+        context.ProjectAssignments.AddRange(mentorAssignment, studentAssignment);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new UpdateProjectCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+
+        await handler.Handle(
+            new UpdateProjectCommand(project.Id, "Title", "Description", ProjectStatus.Submitted, category.Id),
+            CancellationToken.None);
+
+        var notification = Assert.Single(context.Notifications);
+        Assert.Equal(student.UserId, notification.UserId);
+        Assert.Contains("Draft", notification.Message);
+        Assert.Contains("Submitted", notification.Message);
+    }
+
+    [Fact]
     public async Task Handle_StatusUnchanged_DoesNotRecordProjectStatusHistory()
     {
         using var context = TestDbContextFactory.Create();
@@ -125,7 +153,7 @@ public class UpdateProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context));
+        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await handler.Handle(
             new UpdateProjectCommand(project.Id, "New Title", "Description", ProjectStatus.Draft, category.Id),
@@ -147,7 +175,7 @@ public class UpdateProjectCommandHandlerTests
         var handler = new UpdateProjectCommandHandler(
             context,
             TestCurrentUserService.AsMentor(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

@@ -1,8 +1,10 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Documents.DTOs;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
+using AcademicProjects.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,19 +13,20 @@ namespace AcademicProjects.Application.Features.Documents.Commands;
 public sealed class CreateDocumentCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess)
+    ProjectAccessService projectAccess,
+    ProjectNotificationService notifier)
     : IRequestHandler<CreateDocumentCommand, DocumentDto>
 {
     public async Task<DocumentDto> Handle(
         CreateDocumentCommand request,
         CancellationToken cancellationToken)
     {
-        var projectExists = await context.Projects
-            .AnyAsync(
-                project => project.Id == request.ProjectId,
-                cancellationToken);
+        var projectTitle = await context.Projects
+            .Where(project => project.Id == request.ProjectId)
+            .Select(project => project.Title)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!projectExists)
+        if (projectTitle is null)
         {
             throw new NotFoundException("Project", request.ProjectId);
         }
@@ -45,6 +48,13 @@ public sealed class CreateDocumentCommandHandler(
         };
 
         context.Documents.Add(document);
+
+        await notifier.NotifyMembersAsync(
+            request.ProjectId,
+            userId,
+            $"New document uploaded to project '{projectTitle}': {document.FileName}.",
+            NotificationType.Information,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 

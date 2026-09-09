@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Authorization;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.Commands;
 using AcademicProjects.Domain.Entities;
@@ -24,7 +25,7 @@ public class UpdateDocumentCommandHandlerTests
         context.ProjectAssignments.Add(uploaderAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateDocumentCommandHandler(context, uploader, new ProjectAccessService(context));
+        var handler = new UpdateDocumentCommandHandler(context, uploader, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateDocumentCommand(document.Id, " new.pdf ", " /new.pdf ", project.Id),
@@ -42,7 +43,7 @@ public class UpdateDocumentCommandHandlerTests
         var handler = new UpdateDocumentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -63,7 +64,7 @@ public class UpdateDocumentCommandHandlerTests
         context.Documents.Add(document);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateDocumentCommandHandler(context, admin, new ProjectAccessService(context));
+        var handler = new UpdateDocumentCommandHandler(context, admin, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -88,7 +89,7 @@ public class UpdateDocumentCommandHandlerTests
         context.ProjectAssignments.Add(teammateAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateDocumentCommandHandler(context, teammate, new ProjectAccessService(context));
+        var handler = new UpdateDocumentCommandHandler(context, teammate, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateDocumentCommand(document.Id, "renamed.pdf", "/renamed.pdf", project.Id),
@@ -111,7 +112,7 @@ public class UpdateDocumentCommandHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var outsider = TestCurrentUserService.AsStudent();
-        var handler = new UpdateDocumentCommandHandler(context, outsider, new ProjectAccessService(context));
+        var handler = new UpdateDocumentCommandHandler(context, outsider, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Authorization;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.Commands;
 using AcademicProjects.Domain.Entities;
@@ -24,7 +25,7 @@ public class DeleteDocumentCommandHandlerTests
         context.ProjectAssignments.Add(uploaderAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteDocumentCommandHandler(context, uploader, new ProjectAccessService(context));
+        var handler = new DeleteDocumentCommandHandler(context, uploader, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await handler.Handle(
             new DeleteDocumentCommand(document.Id),
@@ -40,7 +41,7 @@ public class DeleteDocumentCommandHandlerTests
         var handler = new DeleteDocumentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -64,7 +65,7 @@ public class DeleteDocumentCommandHandlerTests
         context.ProjectAssignments.Add(teammateAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteDocumentCommandHandler(context, teammate, new ProjectAccessService(context));
+        var handler = new DeleteDocumentCommandHandler(context, teammate, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await handler.Handle(
             new DeleteDocumentCommand(document.Id),
@@ -87,7 +88,7 @@ public class DeleteDocumentCommandHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var outsider = TestCurrentUserService.AsStudent();
-        var handler = new DeleteDocumentCommandHandler(context, outsider, new ProjectAccessService(context));
+        var handler = new DeleteDocumentCommandHandler(context, outsider, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

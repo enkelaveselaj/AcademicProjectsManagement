@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Authorization;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.Commands;
 using AcademicProjects.Domain.Entities;
@@ -22,7 +23,7 @@ public class CreateDocumentCommandHandlerTests
         context.ProjectAssignments.Add(assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateDocumentCommandHandler(context, student, new ProjectAccessService(context));
+        var handler = new CreateDocumentCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new CreateDocumentCommand(" report.pdf ", " /files/report.pdf ", project.Id),
@@ -41,7 +42,7 @@ public class CreateDocumentCommandHandlerTests
         var handler = new CreateDocumentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -62,7 +63,7 @@ public class CreateDocumentCommandHandlerTests
         var handler = new CreateDocumentCommandHandler(
             context,
             TestCurrentUserService.AsStudent(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

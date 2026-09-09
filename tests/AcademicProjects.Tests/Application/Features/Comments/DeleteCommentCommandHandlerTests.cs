@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Comments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -21,7 +22,7 @@ public class DeleteCommentCommandHandlerTests
         context.Comments.Add(comment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteCommentCommandHandler(context, author);
+        var handler = new DeleteCommentCommandHandler(context, author, new ProjectNotificationService(context));
 
         await handler.Handle(
             new DeleteCommentCommand(comment.Id),
@@ -34,7 +35,7 @@ public class DeleteCommentCommandHandlerTests
     public async Task Handle_NonExistentComment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new DeleteCommentCommandHandler(context, TestCurrentUserService.AsAdministrator());
+        var handler = new DeleteCommentCommandHandler(context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -57,7 +58,7 @@ public class DeleteCommentCommandHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var otherStudent = TestCurrentUserService.AsStudent();
-        var handler = new DeleteCommentCommandHandler(context, otherStudent);
+        var handler = new DeleteCommentCommandHandler(context, otherStudent, new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(
@@ -82,7 +83,7 @@ public class DeleteCommentCommandHandlerTests
         context.ProjectAssignments.Add(mentorAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteCommentCommandHandler(context, mentor);
+        var handler = new DeleteCommentCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

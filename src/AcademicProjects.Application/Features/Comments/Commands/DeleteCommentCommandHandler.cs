@@ -1,6 +1,8 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Interfaces;
+using AcademicProjects.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +10,8 @@ namespace AcademicProjects.Application.Features.Comments.Commands;
 
 public sealed class DeleteCommentCommandHandler(
     IApplicationDbContext context,
-    ICurrentUserService currentUser)
+    ICurrentUserService currentUser,
+    ProjectNotificationService notifier)
     : IRequestHandler<DeleteCommentCommand>
 {
     public async Task Handle(
@@ -29,6 +32,18 @@ public sealed class DeleteCommentCommandHandler(
         {
             throw new ForbiddenAccessException("Only the author or an administrator can delete this comment.");
         }
+
+        var projectTitle = await context.Projects
+            .Where(project => project.Id == comment.ProjectId)
+            .Select(project => project.Title)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        await notifier.NotifyMembersAsync(
+            comment.ProjectId,
+            currentUser.GetUserId(),
+            $"A comment was removed from project '{projectTitle}'.",
+            NotificationType.Information,
+            cancellationToken);
 
         context.Comments.Remove(comment);
 

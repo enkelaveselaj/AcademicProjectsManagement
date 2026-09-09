@@ -1,8 +1,10 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Projects.DTOs;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
+using AcademicProjects.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +13,8 @@ namespace AcademicProjects.Application.Features.Projects.Commands;
 public sealed class UpdateProjectCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess)
+    ProjectAccessService projectAccess,
+    ProjectNotificationService notifier)
     : IRequestHandler<UpdateProjectCommand, ProjectDto>
 {
     public async Task<ProjectDto> Handle(
@@ -56,6 +59,8 @@ public sealed class UpdateProjectCommandHandler(
         project.Status = request.Status;
         project.CategoryId = request.CategoryId;
 
+        var userId = currentUser.GetUserId();
+
         if (previousStatus != request.Status)
         {
             context.ProjectStatusHistories.Add(new ProjectStatusHistory
@@ -67,6 +72,22 @@ public sealed class UpdateProjectCommandHandler(
                     ? null
                     : request.StatusChangeComment.Trim()
             });
+
+            await notifier.NotifyMembersAsync(
+                project.Id,
+                userId,
+                $"Project '{project.Title}' status changed from {previousStatus} to {request.Status}.",
+                NotificationType.Information,
+                cancellationToken);
+        }
+        else
+        {
+            await notifier.NotifyMembersAsync(
+                project.Id,
+                userId,
+                $"Project '{project.Title}' was updated.",
+                NotificationType.Information,
+                cancellationToken);
         }
 
         await context.SaveChangesAsync(cancellationToken);

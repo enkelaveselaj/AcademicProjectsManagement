@@ -1,7 +1,9 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Comments.DTOs;
 using AcademicProjects.Application.Interfaces;
+using AcademicProjects.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +11,8 @@ namespace AcademicProjects.Application.Features.Comments.Commands;
 
 public sealed class UpdateCommentCommandHandler(
     IApplicationDbContext context,
-    ICurrentUserService currentUser)
+    ICurrentUserService currentUser,
+    ProjectNotificationService notifier)
     : IRequestHandler<UpdateCommentCommand, CommentDto>
 {
     public async Task<CommentDto> Handle(
@@ -31,18 +34,25 @@ public sealed class UpdateCommentCommandHandler(
             throw new ForbiddenAccessException("Only the author or an administrator can edit this comment.");
         }
 
-        var projectExists = await context.Projects
-            .AnyAsync(
-                project => project.Id == request.ProjectId,
-                cancellationToken);
+        var projectTitle = await context.Projects
+            .Where(project => project.Id == request.ProjectId)
+            .Select(project => project.Title)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!projectExists)
+        if (projectTitle is null)
         {
             throw new NotFoundException("Project", request.ProjectId);
         }
 
         comment.Content = request.Content.Trim();
         comment.ProjectId = request.ProjectId;
+
+        await notifier.NotifyMembersAsync(
+            request.ProjectId,
+            currentUser.GetUserId(),
+            $"A comment was updated on project '{projectTitle}'.",
+            NotificationType.Information,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 

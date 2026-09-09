@@ -1,5 +1,6 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.ProjectAssignments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -23,7 +24,7 @@ public class DeleteProjectAssignmentCommandHandlerTests
         context.ProjectAssignments.AddRange(mentorAssignment, assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteProjectAssignmentCommandHandler(context, mentor, new ProjectAccessService(context));
+        var handler = new DeleteProjectAssignmentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await handler.Handle(
             new DeleteProjectAssignmentCommand(assignment.Id),
@@ -33,13 +34,38 @@ public class DeleteProjectAssignmentCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_RemovedUserAndRemainingMembers_AreBothNotified()
+    {
+        using var context = TestDbContextFactory.Create();
+        var category = new Category { Name = "Category" };
+        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        var mentor = TestCurrentUserService.AsMentor();
+        var removedStudentId = Guid.NewGuid();
+        var mentorAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = mentor.UserId!.Value, Role = "Mentor" };
+        var studentAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = removedStudentId, Role = "Student" };
+        context.Categories.Add(category);
+        context.Projects.Add(project);
+        context.ProjectAssignments.AddRange(mentorAssignment, studentAssignment);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new DeleteProjectAssignmentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+
+        await handler.Handle(
+            new DeleteProjectAssignmentCommand(studentAssignment.Id),
+            CancellationToken.None);
+
+        Assert.Contains(context.Notifications, n => n.UserId == removedStudentId && n.Message.Contains("You were removed"));
+        Assert.DoesNotContain(context.Notifications, n => n.UserId == mentor.UserId);
+    }
+
+    [Fact]
     public async Task Handle_NonExistentAssignment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
         var handler = new DeleteProjectAssignmentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -62,7 +88,7 @@ public class DeleteProjectAssignmentCommandHandlerTests
         var handler = new DeleteProjectAssignmentCommandHandler(
             context,
             TestCurrentUserService.AsMentor(),
-            new ProjectAccessService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

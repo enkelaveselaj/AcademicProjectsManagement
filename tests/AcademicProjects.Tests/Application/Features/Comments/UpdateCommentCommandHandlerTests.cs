@@ -1,4 +1,5 @@
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Comments.Commands;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -21,7 +22,7 @@ public class UpdateCommentCommandHandlerTests
         context.Comments.Add(comment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateCommentCommandHandler(context, author);
+        var handler = new UpdateCommentCommandHandler(context, author, new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateCommentCommand(comment.Id, " New content ", project.Id),
@@ -35,7 +36,7 @@ public class UpdateCommentCommandHandlerTests
     public async Task Handle_NonExistentComment_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new UpdateCommentCommandHandler(context, TestCurrentUserService.AsAdministrator());
+        var handler = new UpdateCommentCommandHandler(context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -56,7 +57,7 @@ public class UpdateCommentCommandHandlerTests
         context.Comments.Add(comment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateCommentCommandHandler(context, author);
+        var handler = new UpdateCommentCommandHandler(context, author, new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -79,7 +80,7 @@ public class UpdateCommentCommandHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var otherStudent = TestCurrentUserService.AsStudent();
-        var handler = new UpdateCommentCommandHandler(context, otherStudent);
+        var handler = new UpdateCommentCommandHandler(context, otherStudent, new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(

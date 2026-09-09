@@ -1,5 +1,6 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Behaviors;
+using AcademicProjects.Application.Common.Notifications;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,7 @@ public static class DependencyInjection
             typeof(DependencyInjection).Assembly);
 
         services.AddScoped<ProjectAccessService>();
+        services.AddScoped<ProjectNotificationService>();
 
         return services;
     }
