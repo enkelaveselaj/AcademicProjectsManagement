@@ -55,5 +55,6 @@ app.MapProjectAssignmentEndpoints();
 app.MapProjectStatusHistoryEndpoints();
 
 await app.Services.SeedIdentityRolesAsync();
+await app.Services.SeedAdministratorAsync(app.Configuration);
 
 app.Run();

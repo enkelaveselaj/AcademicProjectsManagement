@@ -12,6 +12,15 @@ public sealed record RegisteredUser(Guid Id, string Email, string Role);
 
 public sealed record AccessToken(string Value, int ExpiresInSeconds);
 
+public sealed record UserSummary(
+    Guid Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Role);
+
+public sealed record ChangeUserRoleRequest(string Role);
+
 public sealed record ServiceResult<T>(T? Value, IReadOnlyDictionary<string, string[]> Errors)
     where T : class
 {

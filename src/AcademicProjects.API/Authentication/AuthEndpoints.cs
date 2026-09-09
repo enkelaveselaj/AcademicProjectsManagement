@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using AcademicProjects.Application.Authentication;
+using AcademicProjects.Domain.Enums;
 using ApplicationAuthenticationService = AcademicProjects.Application.Authentication.IAuthenticationService;
 
 namespace AcademicProjects.API.Authentication;
@@ -13,6 +14,11 @@ var group = endpoints.MapGroup("/api/auth");
     group.MapPost("/register", RegisterAsync);
     group.MapPost("/login", LoginAsync);
     group.MapGet("/me", GetCurrentUser).RequireAuthorization();
+
+    group.MapGet("/users", GetUsersAsync)
+        .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Administrator)));
+    group.MapPut("/users/{id:guid}/role", ChangeUserRoleAsync)
+        .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Administrator)));
 
     return endpoints;
 }
@@ -52,4 +58,26 @@ private static IResult GetCurrentUser(ClaimsPrincipal user) => Results.Ok(new
     email = user.FindFirstValue(ClaimTypes.Email),
     roles = user.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
 });
+
+private static async Task<IResult> GetUsersAsync(
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken)
+{
+    var users = await userManagementService.GetUsersAsync(cancellationToken);
+
+    return Results.Ok(users);
+}
+
+private static async Task<IResult> ChangeUserRoleAsync(
+    Guid id,
+    ChangeUserRoleRequest request,
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken)
+{
+    var result = await userManagementService.ChangeUserRoleAsync(id, request.Role, cancellationToken);
+
+    return result.Succeeded
+        ? Results.Ok(result.Value)
+        : Results.ValidationProblem(result.Errors);
+}
 }
