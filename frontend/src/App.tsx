@@ -6,6 +6,7 @@ import { LoginScreen } from "./screens/LoginScreen";
 import { SignUpScreen } from "./screens/SignUpScreen";
 import { DashboardScreen } from "./screens/DashboardScreen";
 import { UserManagementScreen } from "./screens/UserManagementScreen";
+import { CategoriesScreen } from "./screens/CategoriesScreen";
 import { ComingSoonScreen } from "./screens/ComingSoonScreen";
 
 const SCREEN_TITLES: Record<Screen, string> = {
@@ -17,6 +18,19 @@ const SCREEN_TITLES: Record<Screen, string> = {
   userManagement: "User Management",
   categories: "Categories",
 };
+
+function renderScreen(screen: Screen) {
+  switch (screen) {
+    case "dashboard":
+      return <DashboardScreen />;
+    case "userManagement":
+      return <UserManagementScreen />;
+    case "categories":
+      return <CategoriesScreen />;
+    default:
+      return <ComingSoonScreen title={SCREEN_TITLES[screen]} />;
+  }
+}
 
 function AppShell() {
   const { user } = useAuth();
@@ -33,11 +47,7 @@ function AppShell() {
 
   return (
     <Layout activeScreen={activeScreen} onNavigate={setActiveScreen}>
-      {activeScreen === "dashboard" && <DashboardScreen />}
-      {activeScreen === "userManagement" && <UserManagementScreen />}
-      {activeScreen !== "dashboard" && activeScreen !== "userManagement" && (
-        <ComingSoonScreen title={SCREEN_TITLES[activeScreen]} />
-      )}
+      {renderScreen(activeScreen)}
     </Layout>
   );
 }

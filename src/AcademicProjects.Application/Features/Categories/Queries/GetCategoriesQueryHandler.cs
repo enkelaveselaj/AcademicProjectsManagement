@@ -19,7 +19,8 @@ public sealed class GetCategoriesQueryHandler(
             .Select(category => new CategoryDto(
                 category.Id,
                 category.Name,
-                category.Description))
+                category.Description,
+                category.Projects.Count))
             .ToListAsync(cancellationToken);
     }
 }

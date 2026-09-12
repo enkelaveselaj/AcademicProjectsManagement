@@ -36,6 +36,7 @@ public sealed class CreateCategoryCommandHandler(
         return new CategoryDto(
             category.Id,
             category.Name,
-            category.Description);
+            category.Description,
+            ProjectCount: 0);
     }
 }

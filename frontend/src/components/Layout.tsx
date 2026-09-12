@@ -34,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { screen: "documents", label: "Documents", icon: FileText },
   { screen: "notifications", label: "Notifications", icon: Bell },
   { screen: "userManagement", label: "User Management", icon: Users, adminOnly: true },
-  { screen: "categories", label: "Categories", icon: Tag },
+  { screen: "categories", label: "Categories", icon: Tag, adminOnly: true },
 ];
 
 function initials(firstName: string, lastName: string): string {

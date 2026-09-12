@@ -38,9 +38,13 @@ public sealed class UpdateCategoryCommandHandler(
 
         await context.SaveChangesAsync(cancellationToken);
 
+        var projectCount = await context.Projects
+            .CountAsync(project => project.CategoryId == category.Id, cancellationToken);
+
         return new CategoryDto(
             category.Id,
             category.Name,
-            category.Description);
+            category.Description,
+            projectCount);
     }
 }

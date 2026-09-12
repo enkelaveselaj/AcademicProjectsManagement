@@ -20,7 +20,8 @@ public sealed class GetCategoryByIdQueryHandler(
             .Select(category => new CategoryDto(
                 category.Id,
                 category.Name,
-                category.Description))
+                category.Description,
+                category.Projects.Count))
             .FirstOrDefaultAsync(cancellationToken);
 
         return category ?? throw new NotFoundException("Category", request.Id);
