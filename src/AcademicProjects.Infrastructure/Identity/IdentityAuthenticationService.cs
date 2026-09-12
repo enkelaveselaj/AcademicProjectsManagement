@@ -165,8 +165,17 @@ public sealed class IdentityAuthenticationService(
         return errors;
     }
 
+    /// <summary>
+    /// Buckets Identity's own error codes (e.g. "PasswordRequiresDigit", "DuplicateEmail") under the
+    /// same field-name keys used elsewhere in this method's validation, so the client can always look
+    /// up an error by field regardless of whether it came from our checks or from Identity's.
+    /// </summary>
     private static Dictionary<string, string[]> ToErrors(IdentityResult result) =>
         result.Errors
-            .GroupBy(error => error.Code)
+            .GroupBy(error => error.Code.StartsWith("Password", StringComparison.Ordinal)
+                ? "password"
+                : error.Code is "DuplicateUserName" or "DuplicateEmail" or "InvalidUserName" or "InvalidEmail"
+                    ? "email"
+                    : "general")
             .ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray());
 }

@@ -7,6 +7,17 @@ interface SignUpScreenProps {
   onNavigateToLogin: () => void;
 }
 
+const KNOWN_FIELDS = new Set([
+  "firstName",
+  "lastName",
+  "email",
+  "password",
+  "dateOfBirth",
+  "personalIdNumber",
+  "requestedRole",
+  "studentId",
+]);
+
 export function SignUpScreen({ onNavigateToLogin }: SignUpScreenProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -46,6 +57,16 @@ export function SignUpScreen({ onNavigateToLogin }: SignUpScreenProps) {
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         setFieldErrors(err.errors);
+
+        const unmatched = Object.entries(err.errors)
+          .filter(([field]) => !KNOWN_FIELDS.has(field))
+          .flatMap(([, messages]) => messages);
+
+        if (unmatched.length > 0) {
+          setGeneralError(unmatched.join(" "));
+        }
+      } else if (err instanceof ApiError) {
+        setGeneralError(err.message);
       } else {
         setGeneralError("Something went wrong. Please try again.");
       }
