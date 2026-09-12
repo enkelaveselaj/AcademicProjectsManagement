@@ -10,22 +10,13 @@ import {
   getProjects,
   projectStatusLabel,
   PROJECT_STATUSES,
+  PROJECT_STATUS_BADGE,
   type Project,
   type ProjectStatus,
 } from "../lib/projectsApi";
 import { ProjectModal } from "./ProjectModal";
 
 const ACTIVE_STATUS: ProjectStatus = 4; // "In Progress" is treated as the platform's "active" state.
-
-const STATUS_BADGE: Record<ProjectStatus, string> = {
-  1: "bg-slate-100 text-slate-700",
-  2: "bg-amber-50 text-amber-700",
-  3: "bg-sky-50 text-sky-700",
-  4: "bg-emerald-50 text-emerald-700",
-  5: "bg-purple-50 text-purple-700",
-  6: "bg-blue-50 text-blue-700",
-  7: "bg-red-50 text-red-700",
-};
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -253,7 +244,7 @@ export function ProjectsScreen() {
                       {project.categoryName}
                     </span>
                     <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[project.status]}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PROJECT_STATUS_BADGE[project.status]}`}>
                         {projectStatusLabel(project.status)}
                       </span>
                       {canManage(project) && (

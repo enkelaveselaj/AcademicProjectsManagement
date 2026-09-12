@@ -18,6 +18,8 @@ public static class NotificationsEndpoints
         group.MapGet("/{id:guid}", GetNotificationByIdAsync);
         group.MapPost("/", CreateNotificationAsync);
         group.MapPut("/{id:guid}", UpdateNotificationAsync);
+        group.MapPut("/{id:guid}/read", MarkAsReadAsync);
+        group.MapPut("/mark-all-read", MarkAllAsReadAsync);
         group.MapDelete("/{id:guid}", DeleteNotificationAsync);
 
         return endpoints;
@@ -78,6 +80,27 @@ public static class NotificationsEndpoints
             cancellationToken);
 
         return Results.Ok(notification);
+    }
+
+    private static async Task<IResult> MarkAsReadAsync(
+        Guid id,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var notification = await sender.Send(
+            new MarkNotificationAsReadCommand(id),
+            cancellationToken);
+
+        return Results.Ok(notification);
+    }
+
+    private static async Task<IResult> MarkAllAsReadAsync(
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new MarkAllNotificationsAsReadCommand(), cancellationToken);
+
+        return Results.NoContent();
     }
 
     private static async Task<IResult> DeleteNotificationAsync(

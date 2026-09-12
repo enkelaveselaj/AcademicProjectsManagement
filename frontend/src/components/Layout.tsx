@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
   Folder,
@@ -10,6 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../lib/useAuth";
+import { getNotifications } from "../lib/notificationsApi";
 
 export type Screen =
   | "dashboard"
@@ -48,7 +49,28 @@ interface LayoutProps {
 }
 
 export function Layout({ activeScreen, onNavigate, children }: LayoutProps) {
-  const { user, signOut } = useAuth();
+  const { user, token, signOut } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    let cancelled = false;
+
+    getNotifications(token)
+      .then((notifications) => {
+        if (!cancelled) {
+          setUnreadCount(notifications.filter((notification) => !notification.isRead).length);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, activeScreen]);
 
   const navItems = NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === "Administrator");
 
@@ -83,7 +105,12 @@ export function Layout({ activeScreen, onNavigate, children }: LayoutProps) {
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
-                  {item.label}
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.screen === "notifications" && unreadCount > 0 && (
+                    <span className="rounded-full bg-red-800 px-1.5 py-0.5 text-xs font-semibold text-white">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
               );
             })}

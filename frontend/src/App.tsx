@@ -10,6 +10,7 @@ import { CategoriesScreen } from "./screens/CategoriesScreen";
 import { ProjectsScreen } from "./screens/ProjectsScreen";
 import { MilestonesScreen } from "./screens/MilestonesScreen";
 import { DocumentsScreen } from "./screens/DocumentsScreen";
+import { NotificationsScreen } from "./screens/NotificationsScreen";
 import { ComingSoonScreen } from "./screens/ComingSoonScreen";
 
 const SCREEN_TITLES: Record<Screen, string> = {
@@ -22,10 +23,10 @@ const SCREEN_TITLES: Record<Screen, string> = {
   categories: "Categories",
 };
 
-function renderScreen(screen: Screen) {
+function renderScreen(screen: Screen, onNavigate: (screen: Screen) => void) {
   switch (screen) {
     case "dashboard":
-      return <DashboardScreen />;
+      return <DashboardScreen onNavigate={onNavigate} />;
     case "userManagement":
       return <UserManagementScreen />;
     case "categories":
@@ -36,6 +37,8 @@ function renderScreen(screen: Screen) {
       return <MilestonesScreen />;
     case "documents":
       return <DocumentsScreen />;
+    case "notifications":
+      return <NotificationsScreen />;
     default:
       return <ComingSoonScreen title={SCREEN_TITLES[screen]} />;
   }
@@ -56,7 +59,7 @@ function AppShell() {
 
   return (
     <Layout activeScreen={activeScreen} onNavigate={setActiveScreen}>
-      {renderScreen(activeScreen)}
+      {renderScreen(activeScreen, setActiveScreen)}
     </Layout>
   );
 }

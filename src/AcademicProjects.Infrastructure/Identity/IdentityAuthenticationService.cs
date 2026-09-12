@@ -1,4 +1,6 @@
 using AcademicProjects.Application.Authentication;
+using AcademicProjects.Application.Interfaces;
+using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,8 @@ namespace AcademicProjects.Infrastructure.Identity;
 
 public sealed class IdentityAuthenticationService(
     UserManager<ApplicationUser> userManager,
-    IAccessTokenGenerator accessTokenGenerator) : IAuthenticationService
+    IAccessTokenGenerator accessTokenGenerator,
+    IApplicationDbContext context) : IAuthenticationService
 {
     public async Task<ServiceResult<RegisteredUser>> RegisterAsync(
         RegisterUserRequest request,
@@ -66,6 +69,8 @@ public sealed class IdentityAuthenticationService(
             return ServiceResult<RegisteredUser>.Failure(ToErrors(roleResult));
         }
 
+        await NotifyAdministratorsOfPendingRequestAsync(user, request.RequestedRole, cancellationToken);
+
         return ServiceResult<RegisteredUser>.Success(
             new RegisteredUser(
                 user.Id,
@@ -112,6 +117,34 @@ public sealed class IdentityAuthenticationService(
             roles);
 
         return ServiceResult<AccessToken>.Success(token);
+    }
+
+    private async Task NotifyAdministratorsOfPendingRequestAsync(
+        ApplicationUser user,
+        UserRole requestedRole,
+        CancellationToken cancellationToken)
+    {
+        var administrators = await userManager.GetUsersInRoleAsync(UserRole.Administrator.ToString());
+
+        if (administrators.Count == 0)
+        {
+            return;
+        }
+
+        var message = $"{user.FirstName} {user.LastName} requested a {requestedRole} account.";
+
+        foreach (var administrator in administrators)
+        {
+            context.Notifications.Add(new Notification
+            {
+                Message = message,
+                Type = NotificationType.Information,
+                IsRead = false,
+                UserId = administrator.Id
+            });
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private static Dictionary<string, string[]> ValidateRegistration(RegisterUserRequest request)

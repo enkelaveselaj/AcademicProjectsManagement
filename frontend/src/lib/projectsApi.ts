@@ -16,6 +16,16 @@ export function projectStatusLabel(status: ProjectStatus): string {
   return PROJECT_STATUSES.find((option) => option.value === status)?.label ?? "Unknown";
 }
 
+export const PROJECT_STATUS_BADGE: Record<ProjectStatus, string> = {
+  1: "bg-slate-100 text-slate-700",
+  2: "bg-amber-50 text-amber-700",
+  3: "bg-sky-50 text-sky-700",
+  4: "bg-emerald-50 text-emerald-700",
+  5: "bg-purple-50 text-purple-700",
+  6: "bg-blue-50 text-blue-700",
+  7: "bg-red-50 text-red-700",
+};
+
 export interface Project {
   id: string;
   title: string;
