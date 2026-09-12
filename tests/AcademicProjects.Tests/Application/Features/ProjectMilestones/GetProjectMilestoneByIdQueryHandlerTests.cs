@@ -16,7 +16,7 @@ public class GetProjectMilestoneByIdQueryHandlerTests
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
         var student = TestCurrentUserService.AsStudent();
-        var milestone = new ProjectMilestone { Title = "Milestone", ProjectId = project.Id, Project = project };
+        var milestone = new ProjectMilestone { Title = "Milestone", DueDate = DateTime.UtcNow.AddDays(30), ProjectId = project.Id, Project = project };
         var assignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = student.UserId!.Value, Role = "Student" };
         context.Categories.Add(category);
         context.Projects.Add(project);
@@ -55,7 +55,7 @@ public class GetProjectMilestoneByIdQueryHandlerTests
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        var milestone = new ProjectMilestone { Title = "Milestone", ProjectId = project.Id, Project = project };
+        var milestone = new ProjectMilestone { Title = "Milestone", DueDate = DateTime.UtcNow.AddDays(30), ProjectId = project.Id, Project = project };
         context.Categories.Add(category);
         context.Projects.Add(project);
         context.ProjectMilestones.Add(milestone);

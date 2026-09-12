@@ -17,8 +17,8 @@ public class GetProjectMilestonesQueryHandlerTests
         context.Categories.Add(category);
         context.Projects.Add(project);
 
-        var older = new ProjectMilestone { Title = "Older", ProjectId = project.Id, Project = project, CreatedAt = DateTime.UtcNow.AddDays(-1) };
-        var newer = new ProjectMilestone { Title = "Newer", ProjectId = project.Id, Project = project, CreatedAt = DateTime.UtcNow };
+        var older = new ProjectMilestone { Title = "Older", DueDate = DateTime.UtcNow.AddDays(30), ProjectId = project.Id, Project = project, CreatedAt = DateTime.UtcNow.AddDays(-1) };
+        var newer = new ProjectMilestone { Title = "Newer", DueDate = DateTime.UtcNow.AddDays(30), ProjectId = project.Id, Project = project, CreatedAt = DateTime.UtcNow };
         context.ProjectMilestones.AddRange(older, newer);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -61,8 +61,8 @@ public class GetProjectMilestonesQueryHandlerTests
         context.Projects.AddRange(memberProject, otherProject);
         context.ProjectAssignments.Add(assignment);
         context.ProjectMilestones.AddRange(
-            new ProjectMilestone { Title = "Visible", ProjectId = memberProject.Id, Project = memberProject },
-            new ProjectMilestone { Title = "Hidden", ProjectId = otherProject.Id, Project = otherProject });
+            new ProjectMilestone { Title = "Visible", DueDate = DateTime.UtcNow.AddDays(30), ProjectId = memberProject.Id, Project = memberProject },
+            new ProjectMilestone { Title = "Hidden", DueDate = DateTime.UtcNow.AddDays(30), ProjectId = otherProject.Id, Project = otherProject });
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetProjectMilestonesQueryHandler(context, student, new ProjectAccessService(context));

@@ -43,6 +43,9 @@ public sealed class ProjectMilestoneConfiguration : IEntityTypeConfiguration<Pro
         builder.ToTable("ProjectMilestones");
         builder.HasKey(milestone => milestone.Id);
         builder.Property(milestone => milestone.Title).HasMaxLength(200).IsRequired();
+        builder.Property(milestone => milestone.Description).HasMaxLength(1_000);
+        builder.Property(milestone => milestone.DueDate).IsRequired();
+        builder.Property(milestone => milestone.Status).HasConversion<int>().IsRequired();
         builder.HasOne(milestone => milestone.Project)
             .WithMany(project => project.Milestones)
             .HasForeignKey(milestone => milestone.ProjectId)

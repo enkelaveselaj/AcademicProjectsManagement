@@ -46,7 +46,19 @@ public sealed class UpdateProjectMilestoneCommandHandler(
             throw new NotFoundException("Project", request.ProjectId);
         }
 
+        if (request.Status == MilestoneStatus.Completed && milestone.Status != MilestoneStatus.Completed)
+        {
+            milestone.CompletedAt = DateTime.UtcNow;
+        }
+        else if (request.Status != MilestoneStatus.Completed && milestone.Status == MilestoneStatus.Completed)
+        {
+            milestone.CompletedAt = null;
+        }
+
         milestone.Title = request.Title.Trim();
+        milestone.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        milestone.DueDate = request.DueDate;
+        milestone.Status = request.Status;
         milestone.ProjectId = request.ProjectId;
 
         await notifier.NotifyMembersAsync(
@@ -61,6 +73,10 @@ public sealed class UpdateProjectMilestoneCommandHandler(
         return new ProjectMilestoneDto(
             milestone.Id,
             milestone.Title,
+            milestone.Description,
+            milestone.DueDate,
+            milestone.CompletedAt,
+            milestone.GetEffectiveStatus(),
             milestone.ProjectId,
             milestone.CreatedAt,
             milestone.UpdatedAt);

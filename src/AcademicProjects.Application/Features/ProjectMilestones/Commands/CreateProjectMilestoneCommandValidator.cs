@@ -11,6 +11,9 @@ public sealed class CreateProjectMilestoneCommandValidator
             .NotEmpty()
             .MaximumLength(200);
 
+        RuleFor(milestone => milestone.Description)
+            .MaximumLength(1000);
+
         RuleFor(milestone => milestone.ProjectId)
             .NotEmpty();
     }

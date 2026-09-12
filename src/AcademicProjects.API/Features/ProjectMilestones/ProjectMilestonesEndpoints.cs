@@ -68,6 +68,9 @@ public static class ProjectMilestonesEndpoints
         var command = new UpdateProjectMilestoneCommand(
             id,
             request.Title,
+            request.Description,
+            request.DueDate,
+            request.Status,
             request.ProjectId);
 
         var milestone = await sender.Send(

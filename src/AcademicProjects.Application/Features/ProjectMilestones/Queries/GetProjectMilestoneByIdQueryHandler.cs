@@ -19,14 +19,7 @@ public sealed class GetProjectMilestoneByIdQueryHandler(
     {
         var milestone = await context.ProjectMilestones
             .AsNoTracking()
-            .Where(milestone => milestone.Id == request.Id)
-            .Select(milestone => new ProjectMilestoneDto(
-                milestone.Id,
-                milestone.Title,
-                milestone.ProjectId,
-                milestone.CreatedAt,
-                milestone.UpdatedAt))
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(milestone => milestone.Id == request.Id, cancellationToken);
 
         if (milestone is null)
         {
@@ -39,6 +32,15 @@ public sealed class GetProjectMilestoneByIdQueryHandler(
             throw new ForbiddenAccessException("You do not have access to this milestone.");
         }
 
-        return milestone;
+        return new ProjectMilestoneDto(
+            milestone.Id,
+            milestone.Title,
+            milestone.Description,
+            milestone.DueDate,
+            milestone.CompletedAt,
+            milestone.GetEffectiveStatus(),
+            milestone.ProjectId,
+            milestone.CreatedAt,
+            milestone.UpdatedAt);
     }
 }

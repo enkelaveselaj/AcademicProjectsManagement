@@ -27,14 +27,21 @@ public sealed class GetProjectMilestonesQueryHandler(
             query = query.Where(milestone => accessibleProjectIds.Contains(milestone.ProjectId));
         }
 
-        return await query
+        var milestones = await query
             .OrderByDescending(milestone => milestone.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return milestones
             .Select(milestone => new ProjectMilestoneDto(
                 milestone.Id,
                 milestone.Title,
+                milestone.Description,
+                milestone.DueDate,
+                milestone.CompletedAt,
+                milestone.GetEffectiveStatus(),
                 milestone.ProjectId,
                 milestone.CreatedAt,
                 milestone.UpdatedAt))
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 }

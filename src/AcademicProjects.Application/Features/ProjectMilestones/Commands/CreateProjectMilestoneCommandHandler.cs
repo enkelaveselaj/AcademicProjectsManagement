@@ -40,6 +40,8 @@ public sealed class CreateProjectMilestoneCommandHandler(
         var milestone = new ProjectMilestone
         {
             Title = request.Title.Trim(),
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            DueDate = request.DueDate,
             ProjectId = request.ProjectId
         };
 
@@ -57,6 +59,10 @@ public sealed class CreateProjectMilestoneCommandHandler(
         return new ProjectMilestoneDto(
             milestone.Id,
             milestone.Title,
+            milestone.Description,
+            milestone.DueDate,
+            milestone.CompletedAt,
+            milestone.GetEffectiveStatus(),
             milestone.ProjectId,
             milestone.CreatedAt,
             milestone.UpdatedAt);

@@ -10,6 +10,8 @@ namespace AcademicProjects.Tests.Application.Features.ProjectMilestones;
 
 public class CreateProjectMilestoneCommandHandlerTests
 {
+    private static readonly DateTime FutureDueDate = DateTime.UtcNow.AddDays(30);
+
     [Fact]
     public async Task Handle_ProjectMentor_CreatesMilestoneAndReturnsDto()
     {
@@ -26,10 +28,13 @@ public class CreateProjectMilestoneCommandHandlerTests
         var handler = new CreateProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
-            new CreateProjectMilestoneCommand(" Literature Review ", project.Id),
+            new CreateProjectMilestoneCommand(" Literature Review ", "Review key papers", FutureDueDate, project.Id),
             CancellationToken.None);
 
         Assert.Equal("Literature Review", result.Title);
+        Assert.Equal("Review key papers", result.Description);
+        Assert.Equal(MilestoneStatus.Pending, result.Status);
+        Assert.Null(result.CompletedAt);
         Assert.Equal(project.Id, result.ProjectId);
         Assert.Single(context.ProjectMilestones);
     }
@@ -45,7 +50,7 @@ public class CreateProjectMilestoneCommandHandlerTests
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
-                new CreateProjectMilestoneCommand("Milestone", Guid.NewGuid()),
+                new CreateProjectMilestoneCommand("Milestone", null, FutureDueDate, Guid.NewGuid()),
                 CancellationToken.None));
     }
 
@@ -66,7 +71,7 @@ public class CreateProjectMilestoneCommandHandlerTests
         var handler = new CreateProjectMilestoneCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
-            new CreateProjectMilestoneCommand("Milestone", project.Id),
+            new CreateProjectMilestoneCommand("Milestone", null, FutureDueDate, project.Id),
             CancellationToken.None);
 
         Assert.Equal("Milestone", result.Title);
@@ -90,7 +95,7 @@ public class CreateProjectMilestoneCommandHandlerTests
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(
-                new CreateProjectMilestoneCommand("Milestone", project.Id),
+                new CreateProjectMilestoneCommand("Milestone", null, FutureDueDate, project.Id),
                 CancellationToken.None));
     }
 }
