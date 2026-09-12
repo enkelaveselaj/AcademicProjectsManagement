@@ -482,3 +482,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Uploaded document files (local dev storage)
+src/AcademicProjects.API/App_Data/

@@ -31,7 +31,8 @@ public sealed class GetDocumentsQueryHandler(
             .Select(document => new DocumentDto(
                 document.Id,
                 document.FileName,
-                document.FilePath,
+                document.ContentType,
+                document.FileSizeBytes,
                 document.UploadedById,
                 document.ProjectId,
                 document.CreatedAt,

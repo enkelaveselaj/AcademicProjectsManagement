@@ -10,6 +10,17 @@ namespace AcademicProjects.Tests.Application.Features.Documents;
 
 public class UpdateDocumentCommandHandlerTests
 {
+    private static Document SampleDocument(Guid uploaderId, Guid projectId, Project project) => new()
+    {
+        FileName = "old.pdf",
+        StoredFileName = "stored-old.pdf",
+        ContentType = "application/pdf",
+        FileSizeBytes = 100,
+        UploadedById = uploaderId,
+        ProjectId = projectId,
+        Project = project
+    };
+
     [Fact]
     public async Task Handle_Uploader_UpdatesAndReturnsDto()
     {
@@ -17,7 +28,7 @@ public class UpdateDocumentCommandHandlerTests
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
         var uploader = TestCurrentUserService.AsStudent();
-        var document = new Document { FileName = "old.pdf", FilePath = "/old.pdf", UploadedById = uploader.UserId!.Value, ProjectId = project.Id, Project = project };
+        var document = SampleDocument(uploader.UserId!.Value, project.Id, project);
         var uploaderAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = uploader.UserId!.Value, Role = "Student" };
         context.Categories.Add(category);
         context.Projects.Add(project);
@@ -28,12 +39,11 @@ public class UpdateDocumentCommandHandlerTests
         var handler = new UpdateDocumentCommandHandler(context, uploader, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
-            new UpdateDocumentCommand(document.Id, " new.pdf ", " /new.pdf ", project.Id),
+            new UpdateDocumentCommand(document.Id, " new.pdf ", project.Id),
             CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.Equal("new.pdf", result!.FileName);
-        Assert.Equal("/new.pdf", result.FilePath);
     }
 
     [Fact]
@@ -47,7 +57,7 @@ public class UpdateDocumentCommandHandlerTests
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
-                new UpdateDocumentCommand(Guid.NewGuid(), "file.pdf", "/file.pdf", Guid.NewGuid()),
+                new UpdateDocumentCommand(Guid.NewGuid(), "file.pdf", Guid.NewGuid()),
                 CancellationToken.None));
     }
 
@@ -58,7 +68,7 @@ public class UpdateDocumentCommandHandlerTests
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
         var admin = TestCurrentUserService.AsAdministrator();
-        var document = new Document { FileName = "old.pdf", FilePath = "/old.pdf", ProjectId = project.Id, Project = project };
+        var document = SampleDocument(Guid.NewGuid(), project.Id, project);
         context.Categories.Add(category);
         context.Projects.Add(project);
         context.Documents.Add(document);
@@ -68,7 +78,7 @@ public class UpdateDocumentCommandHandlerTests
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
-                new UpdateDocumentCommand(document.Id, "file.pdf", "/file.pdf", Guid.NewGuid()),
+                new UpdateDocumentCommand(document.Id, "file.pdf", Guid.NewGuid()),
                 CancellationToken.None));
     }
 
@@ -80,7 +90,7 @@ public class UpdateDocumentCommandHandlerTests
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
         var uploader = TestCurrentUserService.AsStudent();
-        var document = new Document { FileName = "old.pdf", FilePath = "/old.pdf", UploadedById = uploader.UserId!.Value, ProjectId = project.Id, Project = project };
+        var document = SampleDocument(uploader.UserId!.Value, project.Id, project);
         var teammate = TestCurrentUserService.AsStudent();
         var teammateAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = teammate.UserId!.Value, Role = "Student" };
         context.Categories.Add(category);
@@ -92,7 +102,7 @@ public class UpdateDocumentCommandHandlerTests
         var handler = new UpdateDocumentCommandHandler(context, teammate, new ProjectAccessService(context), new ProjectNotificationService(context));
 
         var result = await handler.Handle(
-            new UpdateDocumentCommand(document.Id, "renamed.pdf", "/renamed.pdf", project.Id),
+            new UpdateDocumentCommand(document.Id, "renamed.pdf", project.Id),
             CancellationToken.None);
 
         Assert.Equal("renamed.pdf", result.FileName);
@@ -105,7 +115,7 @@ public class UpdateDocumentCommandHandlerTests
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
         var uploader = TestCurrentUserService.AsStudent();
-        var document = new Document { FileName = "old.pdf", FilePath = "/old.pdf", UploadedById = uploader.UserId!.Value, ProjectId = project.Id, Project = project };
+        var document = SampleDocument(uploader.UserId!.Value, project.Id, project);
         context.Categories.Add(category);
         context.Projects.Add(project);
         context.Documents.Add(document);
@@ -116,7 +126,7 @@ public class UpdateDocumentCommandHandlerTests
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(
-                new UpdateDocumentCommand(document.Id, "renamed.pdf", "/renamed.pdf", project.Id),
+                new UpdateDocumentCommand(document.Id, "renamed.pdf", project.Id),
                 CancellationToken.None));
     }
 }

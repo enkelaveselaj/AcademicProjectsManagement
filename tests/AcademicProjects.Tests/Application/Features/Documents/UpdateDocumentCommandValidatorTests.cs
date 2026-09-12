@@ -10,7 +10,7 @@ public class UpdateDocumentCommandValidatorTests
     public void Validate_ValidCommand_IsValid()
     {
         var result = _validator.Validate(
-            new UpdateDocumentCommand(Guid.NewGuid(), "file.pdf", "/files/file.pdf", Guid.NewGuid()));
+            new UpdateDocumentCommand(Guid.NewGuid(), "file.pdf", Guid.NewGuid()));
 
         Assert.True(result.IsValid);
     }
@@ -19,7 +19,7 @@ public class UpdateDocumentCommandValidatorTests
     public void Validate_EmptyId_HasError()
     {
         var result = _validator.Validate(
-            new UpdateDocumentCommand(Guid.Empty, "file.pdf", "/files/file.pdf", Guid.NewGuid()));
+            new UpdateDocumentCommand(Guid.Empty, "file.pdf", Guid.NewGuid()));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(UpdateDocumentCommand.Id));

@@ -47,7 +47,6 @@ public sealed class UpdateDocumentCommandHandler(
         }
 
         document.FileName = request.FileName.Trim();
-        document.FilePath = request.FilePath.Trim();
         document.ProjectId = request.ProjectId;
 
         await notifier.NotifyMembersAsync(
@@ -62,7 +61,8 @@ public sealed class UpdateDocumentCommandHandler(
         return new DocumentDto(
             document.Id,
             document.FileName,
-            document.FilePath,
+            document.ContentType,
+            document.FileSizeBytes,
             document.UploadedById,
             document.ProjectId,
             document.CreatedAt,

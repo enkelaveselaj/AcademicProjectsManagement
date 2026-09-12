@@ -12,7 +12,8 @@ public sealed class DeleteDocumentCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
     ProjectAccessService projectAccess,
-    ProjectNotificationService notifier)
+    ProjectNotificationService notifier,
+    IFileStorageService fileStorage)
     : IRequestHandler<DeleteDocumentCommand>
 {
     public async Task Handle(
@@ -47,8 +48,12 @@ public sealed class DeleteDocumentCommandHandler(
             NotificationType.Information,
             cancellationToken);
 
+        var storedFileName = document.StoredFileName;
+
         context.Documents.Remove(document);
 
         await context.SaveChangesAsync(cancellationToken);
+
+        await fileStorage.DeleteAsync(storedFileName, cancellationToken);
     }
 }

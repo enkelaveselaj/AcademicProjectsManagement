@@ -14,10 +14,6 @@ public sealed class UpdateDocumentCommandValidator
             .NotEmpty()
             .MaximumLength(255);
 
-        RuleFor(document => document.FilePath)
-            .NotEmpty()
-            .MaximumLength(1_000);
-
         RuleFor(document => document.ProjectId)
             .NotEmpty();
     }

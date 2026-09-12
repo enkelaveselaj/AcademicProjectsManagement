@@ -10,6 +10,8 @@ namespace AcademicProjects.Tests.Application.Features.Documents;
 
 public class CreateDocumentCommandHandlerTests
 {
+    private static MemoryStream SampleContent() => new([1, 2, 3, 4]);
+
     [Fact]
     public async Task Handle_ProjectMember_CreatesDocumentAndReturnsDto()
     {
@@ -23,14 +25,16 @@ public class CreateDocumentCommandHandlerTests
         context.ProjectAssignments.Add(assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateDocumentCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new CreateDocumentCommandHandler(
+            context, student, new ProjectAccessService(context), new ProjectNotificationService(context), new FakeFileStorageService());
 
         var result = await handler.Handle(
-            new CreateDocumentCommand(" report.pdf ", " /files/report.pdf ", project.Id),
+            new CreateDocumentCommand(" report.pdf ", "application/pdf", 4, SampleContent(), project.Id),
             CancellationToken.None);
 
         Assert.Equal("report.pdf", result.FileName);
-        Assert.Equal("/files/report.pdf", result.FilePath);
+        Assert.Equal("application/pdf", result.ContentType);
+        Assert.Equal(4, result.FileSizeBytes);
         Assert.Equal(student.UserId, result.UploadedById);
         Assert.Single(context.Documents);
     }
@@ -42,11 +46,11 @@ public class CreateDocumentCommandHandlerTests
         var handler = new CreateDocumentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context), new FakeFileStorageService());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
-                new CreateDocumentCommand("file.pdf", "/files/file.pdf", Guid.NewGuid()),
+                new CreateDocumentCommand("file.pdf", "application/pdf", 4, SampleContent(), Guid.NewGuid()),
                 CancellationToken.None));
     }
 
@@ -63,11 +67,11 @@ public class CreateDocumentCommandHandlerTests
         var handler = new CreateDocumentCommandHandler(
             context,
             TestCurrentUserService.AsStudent(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
+            new ProjectAccessService(context), new ProjectNotificationService(context), new FakeFileStorageService());
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(
-                new CreateDocumentCommand("file.pdf", "/files/file.pdf", project.Id),
+                new CreateDocumentCommand("file.pdf", "application/pdf", 4, SampleContent(), project.Id),
                 CancellationToken.None));
     }
 }

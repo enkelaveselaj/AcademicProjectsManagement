@@ -62,7 +62,9 @@ public sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.ToTable("Documents");
         builder.HasKey(document => document.Id);
         builder.Property(document => document.FileName).HasMaxLength(255).IsRequired();
-        builder.Property(document => document.FilePath).HasMaxLength(1_000).IsRequired();
+        builder.Property(document => document.StoredFileName).HasMaxLength(300).IsRequired();
+        builder.Property(document => document.ContentType).HasMaxLength(255).IsRequired();
+        builder.Property(document => document.FileSizeBytes).IsRequired();
         builder.HasOne(document => document.Project)
             .WithMany(project => project.Documents)
             .HasForeignKey(document => document.ProjectId)

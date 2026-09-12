@@ -1,6 +1,8 @@
 using AcademicProjects.Application.Features.Documents.Commands;
 using AcademicProjects.Application.Features.Documents.Queries;
+using AcademicProjects.Application.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AcademicProjects.API.Features.Documents;
 
@@ -15,7 +17,8 @@ public static class DocumentsEndpoints
 
         group.MapGet("/", GetDocumentsAsync);
         group.MapGet("/{id:guid}", GetDocumentByIdAsync);
-        group.MapPost("/", CreateDocumentAsync);
+        group.MapGet("/{id:guid}/download", DownloadDocumentAsync);
+        group.MapPost("/", CreateDocumentAsync).DisableAntiforgery();
         group.MapPut("/{id:guid}", UpdateDocumentAsync);
         group.MapDelete("/{id:guid}", DeleteDocumentAsync);
 
@@ -45,18 +48,36 @@ public static class DocumentsEndpoints
         return Results.Ok(document);
     }
 
+    private static async Task<IResult> DownloadDocumentAsync(
+        Guid id,
+        ISender sender,
+        IFileStorageService fileStorage,
+        CancellationToken cancellationToken)
+    {
+        var file = await sender.Send(new GetDocumentFileQuery(id), cancellationToken);
+        var stream = await fileStorage.OpenReadAsync(file.StoredFileName, cancellationToken);
+
+        return Results.File(stream, file.ContentType, file.FileName);
+    }
+
     private static async Task<IResult> CreateDocumentAsync(
-        CreateDocumentCommand command,
+        IFormFile file,
+        [FromForm] Guid projectId,
         ISender sender,
         CancellationToken cancellationToken)
     {
-        var document = await sender.Send(
-            command,
-            cancellationToken);
+        await using var stream = file.OpenReadStream();
 
-        return Results.Created(
-            $"/api/documents/{document.Id}",
-            document);
+        var command = new CreateDocumentCommand(
+            file.FileName,
+            string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
+            file.Length,
+            stream,
+            projectId);
+
+        var document = await sender.Send(command, cancellationToken);
+
+        return Results.Created($"/api/documents/{document.Id}", document);
     }
 
     private static async Task<IResult> UpdateDocumentAsync(
@@ -68,7 +89,6 @@ public static class DocumentsEndpoints
         var command = new UpdateDocumentCommand(
             id,
             request.FileName,
-            request.FilePath,
             request.ProjectId);
 
         var document = await sender.Send(

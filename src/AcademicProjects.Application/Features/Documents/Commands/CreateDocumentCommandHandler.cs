@@ -14,7 +14,8 @@ public sealed class CreateDocumentCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
     ProjectAccessService projectAccess,
-    ProjectNotificationService notifier)
+    ProjectNotificationService notifier,
+    IFileStorageService fileStorage)
     : IRequestHandler<CreateDocumentCommand, DocumentDto>
 {
     public async Task<DocumentDto> Handle(
@@ -39,10 +40,17 @@ public sealed class CreateDocumentCommandHandler(
             throw new ForbiddenAccessException("Only members of this project can upload documents to it.");
         }
 
+        var storedFileName = await fileStorage.SaveAsync(
+            request.Content,
+            Path.GetExtension(request.FileName),
+            cancellationToken);
+
         var document = new Document
         {
             FileName = request.FileName.Trim(),
-            FilePath = request.FilePath.Trim(),
+            StoredFileName = storedFileName,
+            ContentType = request.ContentType,
+            FileSizeBytes = request.FileSizeBytes,
             UploadedById = userId,
             ProjectId = request.ProjectId
         };
@@ -61,7 +69,8 @@ public sealed class CreateDocumentCommandHandler(
         return new DocumentDto(
             document.Id,
             document.FileName,
-            document.FilePath,
+            document.ContentType,
+            document.FileSizeBytes,
             document.UploadedById,
             document.ProjectId,
             document.CreatedAt,

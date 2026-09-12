@@ -16,7 +16,7 @@ public class GetDocumentByIdQueryHandlerTests
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
         var student = TestCurrentUserService.AsStudent();
-        var document = new Document { FileName = "file.pdf", FilePath = "/file.pdf", ProjectId = project.Id, Project = project };
+        var document = new Document { FileName = "file.pdf", StoredFileName = "stored-file.pdf", ContentType = "application/pdf", FileSizeBytes = 10, ProjectId = project.Id, Project = project };
         var assignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = student.UserId!.Value, Role = "Student" };
         context.Categories.Add(category);
         context.Projects.Add(project);
@@ -55,7 +55,7 @@ public class GetDocumentByIdQueryHandlerTests
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        var document = new Document { FileName = "file.pdf", FilePath = "/file.pdf", ProjectId = project.Id, Project = project };
+        var document = new Document { FileName = "file.pdf", StoredFileName = "stored-file.pdf", ContentType = "application/pdf", FileSizeBytes = 10, ProjectId = project.Id, Project = project };
         context.Categories.Add(category);
         context.Projects.Add(project);
         context.Documents.Add(document);

@@ -1,34 +1,31 @@
 using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
-using AcademicProjects.Application.Features.Documents.DTOs;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AcademicProjects.Application.Features.Documents.Queries;
 
-public sealed class GetDocumentByIdQueryHandler(
+public sealed class GetDocumentFileQueryHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
     ProjectAccessService projectAccess)
-    : IRequestHandler<GetDocumentByIdQuery, DocumentDto>
+    : IRequestHandler<GetDocumentFileQuery, DocumentFileDto>
 {
-    public async Task<DocumentDto> Handle(
-        GetDocumentByIdQuery request,
+    public async Task<DocumentFileDto> Handle(
+        GetDocumentFileQuery request,
         CancellationToken cancellationToken)
     {
         var document = await context.Documents
             .AsNoTracking()
             .Where(document => document.Id == request.Id)
-            .Select(document => new DocumentDto(
-                document.Id,
+            .Select(document => new
+            {
                 document.FileName,
                 document.ContentType,
-                document.FileSizeBytes,
-                document.UploadedById,
-                document.ProjectId,
-                document.CreatedAt,
-                document.UpdatedAt))
+                document.StoredFileName,
+                document.ProjectId
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (document is null)
@@ -42,6 +39,6 @@ public sealed class GetDocumentByIdQueryHandler(
             throw new ForbiddenAccessException("You do not have access to this document.");
         }
 
-        return document;
+        return new DocumentFileDto(document.FileName, document.ContentType, document.StoredFileName);
     }
 }

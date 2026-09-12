@@ -22,8 +22,9 @@ export async function apiRequest<TResponse>(
   { method = "GET", body, token }: RequestOptions = {},
 ): Promise<TResponse> {
   const headers: Record<string, string> = {};
+  const isFormData = body instanceof FormData;
 
-  if (body !== undefined) {
+  if (body !== undefined && !isFormData) {
     headers["Content-Type"] = "application/json";
   }
 
@@ -34,7 +35,7 @@ export async function apiRequest<TResponse>(
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
   });
 
   if (response.status === 204) {
@@ -50,4 +51,25 @@ export async function apiRequest<TResponse>(
   }
 
   return data as TResponse;
+}
+
+/// Fetches a binary response (e.g. a file download) with the auth header attached, since a
+/// plain <a href> link can't carry an Authorization header itself.
+export async function apiFetchBlob(
+  path: string,
+  token: string,
+): Promise<{ blob: Blob; fileName: string }> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new ApiError("Could not download the file.", response.status);
+  }
+
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const match = /filename="?([^";]+)"?/i.exec(disposition);
+  const fileName = match?.[1] ?? "download";
+
+  return { blob: await response.blob(), fileName };
 }

@@ -5,5 +5,7 @@ namespace AcademicProjects.Application.Features.Documents.Commands;
 
 public sealed record CreateDocumentCommand(
     string FileName,
-    string FilePath,
+    string ContentType,
+    long FileSizeBytes,
+    Stream Content,
     Guid ProjectId) : IRequest<DocumentDto>;

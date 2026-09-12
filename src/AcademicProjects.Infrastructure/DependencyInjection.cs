@@ -1,6 +1,7 @@
 using System.Text;
 using AcademicProjects.Application.Authentication;
 using AcademicProjects.Infrastructure.Authentication;
+using AcademicProjects.Infrastructure.Files;
 using AcademicProjects.Infrastructure.Identity;
 using AcademicProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -49,6 +50,7 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         services.AddAuthentication(options =>
 {

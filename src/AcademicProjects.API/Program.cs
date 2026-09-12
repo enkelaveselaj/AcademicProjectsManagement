@@ -11,10 +11,23 @@ using AcademicProjects.API.Features.ProjectMilestones;
 using AcademicProjects.API.Features.ProjectAssignments;
 using AcademicProjects.API.Features.ProjectStatusHistories;
 using AcademicProjects.API.Middleware;
+using AcademicProjects.Application.Features.Documents.Commands;
+using Microsoft.AspNetCore.Http.Features;
 
 const string FrontendCorsPolicy = "FrontendCorsPolicy";
+const long MaxUploadRequestBodySizeBytes = CreateDocumentCommandValidator.MaxFileSizeBytes + 10 * 1024 * 1024;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = MaxUploadRequestBodySizeBytes;
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = MaxUploadRequestBodySizeBytes;
+});
 
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();

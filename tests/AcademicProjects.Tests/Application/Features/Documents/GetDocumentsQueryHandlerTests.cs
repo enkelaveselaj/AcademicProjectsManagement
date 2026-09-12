@@ -17,8 +17,8 @@ public class GetDocumentsQueryHandlerTests
         context.Categories.Add(category);
         context.Projects.Add(project);
         context.Documents.AddRange(
-            new Document { FileName = "a.pdf", FilePath = "/a.pdf", ProjectId = project.Id, Project = project },
-            new Document { FileName = "b.pdf", FilePath = "/b.pdf", ProjectId = project.Id, Project = project });
+            new Document { FileName = "a.pdf", StoredFileName = "stored-a.pdf", ContentType = "application/pdf", FileSizeBytes = 10, ProjectId = project.Id, Project = project },
+            new Document { FileName = "b.pdf", StoredFileName = "stored-b.pdf", ContentType = "application/pdf", FileSizeBytes = 10, ProjectId = project.Id, Project = project });
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetDocumentsQueryHandler(
@@ -58,8 +58,8 @@ public class GetDocumentsQueryHandlerTests
         context.Projects.AddRange(memberProject, otherProject);
         context.ProjectAssignments.Add(assignment);
         context.Documents.AddRange(
-            new Document { FileName = "visible.pdf", FilePath = "/visible.pdf", ProjectId = memberProject.Id, Project = memberProject },
-            new Document { FileName = "hidden.pdf", FilePath = "/hidden.pdf", ProjectId = otherProject.Id, Project = otherProject });
+            new Document { FileName = "visible.pdf", StoredFileName = "stored-visible.pdf", ContentType = "application/pdf", FileSizeBytes = 10, ProjectId = memberProject.Id, Project = memberProject },
+            new Document { FileName = "hidden.pdf", StoredFileName = "stored-hidden.pdf", ContentType = "application/pdf", FileSizeBytes = 10, ProjectId = otherProject.Id, Project = otherProject });
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetDocumentsQueryHandler(context, student, new ProjectAccessService(context));
