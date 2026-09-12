@@ -72,6 +72,8 @@ public sealed class CreateProjectCommandHandler(
             project.Status,
             project.CategoryId,
             category.Name,
-            project.CreatedById);
+            project.CreatedById,
+            project.CreatedAt,
+            project.UpdatedAt);
     }
 }

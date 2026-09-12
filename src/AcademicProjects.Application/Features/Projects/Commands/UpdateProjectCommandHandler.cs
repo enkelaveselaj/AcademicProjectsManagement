@@ -99,6 +99,8 @@ public sealed class UpdateProjectCommandHandler(
             project.Status,
             project.CategoryId,
             category.Name,
-            project.CreatedById);
+            project.CreatedById,
+            project.CreatedAt,
+            project.UpdatedAt);
     }
 }

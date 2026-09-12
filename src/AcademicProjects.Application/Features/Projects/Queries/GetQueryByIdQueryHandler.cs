@@ -24,7 +24,9 @@ public sealed class GetProjectByIdQueryHandler(
                 project.Status,
                 project.CategoryId,
                 project.Category.Name,
-                project.CreatedById))
+                project.CreatedById,
+                project.CreatedAt,
+                project.UpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
 
         return project ?? throw new NotFoundException("Project", request.Id);

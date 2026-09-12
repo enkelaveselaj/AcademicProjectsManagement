@@ -20,8 +20,18 @@ export interface PendingUser {
   requestedAt: string;
 }
 
+export interface UserDirectoryEntry {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 export function getUsers(token: string): Promise<UserSummary[]> {
   return apiRequest<UserSummary[]>("/api/auth/users", { token });
+}
+
+export function getUserDirectory(token: string): Promise<UserDirectoryEntry[]> {
+  return apiRequest<UserDirectoryEntry[]>("/api/auth/directory", { token });
 }
 
 export function getPendingUsers(token: string): Promise<PendingUser[]> {

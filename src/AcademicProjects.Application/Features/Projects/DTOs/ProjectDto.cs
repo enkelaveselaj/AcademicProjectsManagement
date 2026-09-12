@@ -9,4 +9,6 @@ public sealed record ProjectDto(
     ProjectStatus Status,
     Guid CategoryId,
     string CategoryName,
-    Guid CreatedById);
+    Guid CreatedById,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);

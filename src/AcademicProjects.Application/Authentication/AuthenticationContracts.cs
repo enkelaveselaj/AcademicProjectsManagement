@@ -38,6 +38,12 @@ public sealed record PendingUser(
 
 public sealed record ChangeUserRoleRequest(string Role);
 
+/// <summary>
+/// Minimal, non-admin-gated name lookup so any authenticated user can resolve teammate/mentor
+/// display names (e.g. on a project card) without needing the Administrator-only user list.
+/// </summary>
+public sealed record UserDirectoryEntry(Guid Id, string FirstName, string LastName);
+
 public sealed record ServiceResult<T>(T? Value, IReadOnlyDictionary<string, string[]> Errors)
 {
     public bool Succeeded => Errors.Count == 0;

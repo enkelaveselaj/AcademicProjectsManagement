@@ -20,4 +20,7 @@ public interface IUserManagementService
     Task<ServiceResult<bool>> RejectUserAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<UserDirectoryEntry>> GetUserDirectoryAsync(
+        CancellationToken cancellationToken = default);
 }

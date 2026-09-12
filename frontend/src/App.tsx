@@ -7,6 +7,7 @@ import { SignUpScreen } from "./screens/SignUpScreen";
 import { DashboardScreen } from "./screens/DashboardScreen";
 import { UserManagementScreen } from "./screens/UserManagementScreen";
 import { CategoriesScreen } from "./screens/CategoriesScreen";
+import { ProjectsScreen } from "./screens/ProjectsScreen";
 import { ComingSoonScreen } from "./screens/ComingSoonScreen";
 
 const SCREEN_TITLES: Record<Screen, string> = {
@@ -27,6 +28,8 @@ function renderScreen(screen: Screen) {
       return <UserManagementScreen />;
     case "categories":
       return <CategoriesScreen />;
+    case "projects":
+      return <ProjectsScreen />;
     default:
       return <ComingSoonScreen title={SCREEN_TITLES[screen]} />;
   }

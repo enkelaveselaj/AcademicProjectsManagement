@@ -153,6 +153,16 @@ public sealed class IdentityUserManagementService(
         return ServiceResult<bool>.Success(true);
     }
 
+    public async Task<IReadOnlyList<UserDirectoryEntry>> GetUserDirectoryAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await userManager.Users
+            .Where(user => user.ApprovalStatus == ApprovalStatus.Approved)
+            .OrderBy(user => user.FirstName)
+            .Select(user => new UserDirectoryEntry(user.Id, user.FirstName, user.LastName))
+            .ToListAsync(cancellationToken);
+    }
+
     private static Dictionary<string, string[]> ToErrors(IdentityResult result) =>
         result.Errors
             .GroupBy(error => error.Code)

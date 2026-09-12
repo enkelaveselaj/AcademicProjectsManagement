@@ -1,24 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../lib/useAuth";
 import { getCategories, type Category } from "../lib/categoriesApi";
+import { paletteFor } from "../lib/colorPalette";
 import { CategoryModal } from "./CategoryModal";
-
-const PALETTE = [
-  { bg: "bg-slate-900", text: "text-slate-900", bar: "bg-slate-900" },
-  { bg: "bg-red-800", text: "text-red-800", bar: "bg-red-800" },
-  { bg: "bg-emerald-700", text: "text-emerald-700", bar: "bg-emerald-700" },
-  { bg: "bg-amber-700", text: "text-amber-700", bar: "bg-amber-700" },
-  { bg: "bg-purple-700", text: "text-purple-700", bar: "bg-purple-700" },
-  { bg: "bg-teal-700", text: "text-teal-700", bar: "bg-teal-700" },
-];
-
-function paletteFor(id: string) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  }
-  return PALETTE[hash % PALETTE.length];
-}
 
 type ModalState = "closed" | "create" | Category;
 

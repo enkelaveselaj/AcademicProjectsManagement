@@ -14,6 +14,7 @@ var group = endpoints.MapGroup("/api/auth");
     group.MapPost("/register", RegisterAsync);
     group.MapPost("/login", LoginAsync);
     group.MapGet("/me", GetCurrentUser).RequireAuthorization();
+    group.MapGet("/directory", GetUserDirectoryAsync).RequireAuthorization();
 
     group.MapGet("/users", GetUsersAsync)
         .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Administrator)));
@@ -72,6 +73,15 @@ private static IResult GetCurrentUser(ClaimsPrincipal user) => Results.Ok(new
     email = user.FindFirstValue(ClaimTypes.Email),
     roles = user.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
 });
+
+private static async Task<IResult> GetUserDirectoryAsync(
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken)
+{
+    var directory = await userManagementService.GetUserDirectoryAsync(cancellationToken);
+
+    return Results.Ok(directory);
+}
 
 private static async Task<IResult> GetUsersAsync(
     IUserManagementService userManagementService,
