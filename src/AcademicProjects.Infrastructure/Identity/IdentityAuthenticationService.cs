@@ -1,6 +1,7 @@
 using AcademicProjects.Application.Authentication;
 using AcademicProjects.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace AcademicProjects.Infrastructure.Identity;
 
@@ -12,14 +13,30 @@ public sealed class IdentityAuthenticationService(
         RegisterUserRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.FirstName)
-            || string.IsNullOrWhiteSpace(request.LastName)
-            || string.IsNullOrWhiteSpace(request.Email)
-            || string.IsNullOrWhiteSpace(request.Password))
+        var errors = ValidateRegistration(request);
+        if (errors.Count > 0)
+        {
+            return ServiceResult<RegisteredUser>.Failure(errors);
+        }
+
+        var email = request.Email.Trim();
+        var personalIdNumber = request.PersonalIdNumber.Trim();
+        var studentId = request.RequestedRole == UserRole.Student ? request.StudentId!.Trim() : null;
+
+        if (await userManager.Users.AnyAsync(user => user.PersonalIdNumber == personalIdNumber, cancellationToken))
         {
             return ServiceResult<RegisteredUser>.Failure(new Dictionary<string, string[]>
             {
-                ["user"] = ["First name, last name, email, and password are required."]
+                ["personalIdNumber"] = ["An account with this ID number already exists."]
+            });
+        }
+
+        if (studentId is not null
+            && await userManager.Users.AnyAsync(user => user.StudentId == studentId, cancellationToken))
+        {
+            return ServiceResult<RegisteredUser>.Failure(new Dictionary<string, string[]>
+            {
+                ["studentId"] = ["An account with this student ID already exists."]
             });
         }
 
@@ -27,8 +44,13 @@ public sealed class IdentityAuthenticationService(
         {
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
-            UserName = request.Email.Trim(),
-            Email = request.Email.Trim()
+            UserName = email,
+            Email = email,
+            DateOfBirth = request.DateOfBirth.Date,
+            PersonalIdNumber = personalIdNumber,
+            StudentId = studentId,
+            ApprovalStatus = ApprovalStatus.Pending,
+            CreatedAt = DateTime.UtcNow
         };
 
         var createResult = await userManager.CreateAsync(user, request.Password);
@@ -37,7 +59,7 @@ public sealed class IdentityAuthenticationService(
             return ServiceResult<RegisteredUser>.Failure(ToErrors(createResult));
         }
 
-        var roleResult = await userManager.AddToRoleAsync(user, UserRole.Student.ToString());
+        var roleResult = await userManager.AddToRoleAsync(user, request.RequestedRole.ToString());
         if (!roleResult.Succeeded)
         {
             await userManager.DeleteAsync(user);
@@ -45,7 +67,11 @@ public sealed class IdentityAuthenticationService(
         }
 
         return ServiceResult<RegisteredUser>.Success(
-            new RegisteredUser(user.Id, user.Email!, UserRole.Student.ToString()));
+            new RegisteredUser(
+                user.Id,
+                user.Email!,
+                request.RequestedRole.ToString(),
+                user.ApprovalStatus.ToString()));
     }
 
     public async Task<ServiceResult<AccessToken>> LoginAsync(
@@ -69,6 +95,14 @@ public sealed class IdentityAuthenticationService(
             });
         }
 
+        if (user.ApprovalStatus != ApprovalStatus.Approved)
+        {
+            return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
+            {
+                ["approval"] = ["Your account is awaiting administrator approval."]
+            });
+        }
+
         var roles = await userManager.GetRolesAsync(user);
         var token = accessTokenGenerator.Generate(
             user.Id,
@@ -78,6 +112,57 @@ public sealed class IdentityAuthenticationService(
             roles);
 
         return ServiceResult<AccessToken>.Success(token);
+    }
+
+    private static Dictionary<string, string[]> ValidateRegistration(RegisterUserRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(request.FirstName))
+        {
+            errors["firstName"] = ["First name is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.LastName))
+        {
+            errors["lastName"] = ["Last name is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            errors["email"] = ["Email is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            errors["password"] = ["Password is required."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.PersonalIdNumber))
+        {
+            errors["personalIdNumber"] = ["A personal ID number is required."];
+        }
+
+        if (request.RequestedRole is not (UserRole.Student or UserRole.Mentor))
+        {
+            errors["requestedRole"] = ["You can only request a Student or Mentor account."];
+        }
+        else if (request.RequestedRole == UserRole.Student && string.IsNullOrWhiteSpace(request.StudentId))
+        {
+            errors["studentId"] = ["A student ID is required for a Student account."];
+        }
+
+        var today = DateTime.UtcNow.Date;
+        if (request.DateOfBirth.Date > today)
+        {
+            errors["dateOfBirth"] = ["Date of birth cannot be in the future."];
+        }
+        else if (request.DateOfBirth.Date > today.AddYears(-16))
+        {
+            errors["dateOfBirth"] = ["You must be at least 16 years old to register."];
+        }
+
+        return errors;
     }
 
     private static Dictionary<string, string[]> ToErrors(IdentityResult result) =>

@@ -9,4 +9,15 @@ public interface IUserManagementService
         Guid userId,
         string role,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<PendingUser>> GetPendingUsersAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<UserSummary>> ApproveUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<bool>> RejectUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

@@ -7,7 +7,7 @@ public class ServiceResultTests
     [Fact]
     public void Success_HasValueAndNoErrors()
     {
-        var user = new RegisteredUser(Guid.NewGuid(), "student@example.com", "Student");
+        var user = new RegisteredUser(Guid.NewGuid(), "student@example.com", "Student", "Pending");
 
         var result = ServiceResult<RegisteredUser>.Success(user);
 

@@ -83,6 +83,76 @@ public sealed class IdentityUserManagementService(
             new UserSummary(user.Id, user.FirstName, user.LastName, user.Email ?? string.Empty, parsedRole.ToString()));
     }
 
+    public async Task<IReadOnlyList<PendingUser>> GetPendingUsersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var pendingUsers = await userManager.Users
+            .Where(user => user.ApprovalStatus == ApprovalStatus.Pending)
+            .OrderBy(user => user.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        var results = new List<PendingUser>(pendingUsers.Count);
+
+        foreach (var user in pendingUsers)
+        {
+            var roles = await userManager.GetRolesAsync(user);
+
+            results.Add(new PendingUser(
+                user.Id,
+                user.FirstName,
+                user.LastName,
+                user.Email ?? string.Empty,
+                roles.FirstOrDefault() ?? string.Empty,
+                user.DateOfBirth,
+                user.PersonalIdNumber,
+                user.StudentId,
+                user.CreatedAt));
+        }
+
+        return results;
+    }
+
+    public async Task<ServiceResult<UserSummary>> ApproveUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new NotFoundException("User", userId);
+
+        user.ApprovalStatus = ApprovalStatus.Approved;
+
+        var updateResult = await userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            return ServiceResult<UserSummary>.Failure(ToErrors(updateResult));
+        }
+
+        var roles = await userManager.GetRolesAsync(user);
+
+        return ServiceResult<UserSummary>.Success(
+            new UserSummary(user.Id, user.FirstName, user.LastName, user.Email ?? string.Empty, roles.FirstOrDefault() ?? string.Empty));
+    }
+
+    public async Task<ServiceResult<bool>> RejectUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new NotFoundException("User", userId);
+
+        if (user.ApprovalStatus != ApprovalStatus.Pending)
+        {
+            return ServiceResult<bool>.Failure(new Dictionary<string, string[]>
+            {
+                ["approvalStatus"] = ["Only a pending registration can be rejected."]
+            });
+        }
+
+        await userManager.DeleteAsync(user);
+
+        return ServiceResult<bool>.Success(true);
+    }
+
     private static Dictionary<string, string[]> ToErrors(IdentityResult result) =>
         result.Errors
             .GroupBy(error => error.Code)

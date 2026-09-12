@@ -59,7 +59,11 @@ public static class IdentityDataSeeder
             FirstName = "Admin",
             LastName = "User",
             UserName = email,
-            Email = email
+            Email = email,
+            DateOfBirth = new DateTime(1990, 1, 1),
+            PersonalIdNumber = "SEED-ADMIN",
+            ApprovalStatus = ApprovalStatus.Approved,
+            CreatedAt = DateTime.UtcNow
         };
 
         var createResult = await userManager.CreateAsync(admin, password);

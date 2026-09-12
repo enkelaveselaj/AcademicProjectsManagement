@@ -4,7 +4,11 @@ import { ApiError } from "../lib/apiClient";
 import { getRecentAccounts } from "../lib/recentAccounts";
 import { LoginHeroPanel } from "./LoginHeroPanel";
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  onNavigateToSignUp: () => void;
+}
+
+export function LoginScreen({ onNavigateToSignUp }: LoginScreenProps) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +26,8 @@ export function LoginScreen() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Invalid email or password.");
+      } else if (err instanceof ApiError && err.status === 403) {
+        setError(err.message);
       } else {
         setError("Something went wrong. Please try again.");
       }
@@ -116,6 +122,13 @@ export function LoginScreen() {
               </div>
             </div>
           )}
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Don't have an account?{" "}
+            <button type="button" onClick={onNavigateToSignUp} className="font-medium text-slate-900 underline">
+              Sign up
+            </button>
+          </p>
         </div>
       </div>
     </div>
