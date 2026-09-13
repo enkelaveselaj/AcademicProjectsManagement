@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, Folder } from "lucide-react";
+import { Check, Folder } from "lucide-react";
 import { useAuth } from "../lib/useAuth";
-import { getMilestones, type ProjectMilestone, type MilestoneStatus } from "../lib/milestonesApi";
+import {
+  getMilestones,
+  MILESTONE_STATUS_META,
+  type ProjectMilestone,
+  type MilestoneStatus,
+} from "../lib/milestonesApi";
 import { getProjects, type Project } from "../lib/projectsApi";
-
-const STATUS_META: Record<MilestoneStatus, { label: string; badge: string }> = {
-  1: { label: "pending", badge: "bg-slate-100 text-slate-600" },
-  2: { label: "in progress", badge: "bg-sky-50 text-sky-700" },
-  3: { label: "completed", badge: "bg-emerald-50 text-emerald-700" },
-  4: { label: "overdue", badge: "bg-red-50 text-red-700" },
-};
+import { MilestoneStatusIcon } from "../components/MilestoneStatusIcon";
 
 const STAT_CARDS: { status: MilestoneStatus; label: string }[] = [
   { status: 2, label: "In Progress" },
@@ -20,27 +19,6 @@ const STAT_CARDS: { status: MilestoneStatus; label: string }[] = [
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-}
-
-function StatusIcon({ status }: { status: MilestoneStatus }) {
-  if (status === 3) {
-    return (
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white">
-        <Check className="h-4 w-4" />
-      </div>
-    );
-  }
-  if (status === 4) {
-    return (
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-700 text-white">
-        <AlertTriangle className="h-4 w-4" />
-      </div>
-    );
-  }
-  if (status === 2) {
-    return <div className="h-8 w-8 shrink-0 rounded-full border-2 border-slate-900" />;
-  }
-  return <div className="h-8 w-8 shrink-0 rounded-full border-2 border-slate-300" />;
 }
 
 export function MilestonesScreen() {
@@ -198,14 +176,14 @@ export function MilestonesScreen() {
               <p className="text-sm text-slate-500">No milestones match this filter.</p>
             ) : (
               filteredMilestones.map((milestone) => {
-                const meta = STATUS_META[milestone.status];
+                const meta = MILESTONE_STATUS_META[milestone.status];
 
                 return (
                   <div
                     key={milestone.id}
                     className="flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4"
                   >
-                    <StatusIcon status={milestone.status} />
+                    <MilestoneStatusIcon status={milestone.status} />
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-4">

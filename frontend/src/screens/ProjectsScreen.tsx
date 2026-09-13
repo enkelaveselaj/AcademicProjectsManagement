@@ -15,6 +15,7 @@ import {
   type ProjectStatus,
 } from "../lib/projectsApi";
 import { ProjectModal } from "./ProjectModal";
+import { ProjectDetailScreen } from "./ProjectDetailScreen";
 
 const ACTIVE_STATUS: ProjectStatus = 4; // "In Progress" is treated as the platform's "active" state.
 
@@ -48,6 +49,7 @@ export function ProjectsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>("closed");
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
@@ -151,6 +153,20 @@ export function ProjectsScreen() {
     return user?.role === "Administrator" || project.createdById === user?.id;
   }
 
+  const selectedProject = selectedProjectId ? projects.find((project) => project.id === selectedProjectId) : undefined;
+
+  if (selectedProject) {
+    return (
+      <ProjectDetailScreen
+        project={selectedProject}
+        milestones={milestones}
+        assignments={assignments}
+        directory={directory}
+        onBack={() => setSelectedProjectId(null)}
+      />
+    );
+  }
+
   return (
     <div>
       <div className="flex items-start justify-between gap-4">
@@ -236,7 +252,11 @@ export function ProjectsScreen() {
               const updatedLabel = formatDate(project.updatedAt ?? project.createdAt);
 
               return (
-                <div key={project.id} className="rounded-xl border border-slate-200 bg-white p-5">
+                <div
+                  key={project.id}
+                  onClick={() => setSelectedProjectId(project.id)}
+                  className="cursor-pointer rounded-xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-sm"
+                >
                   <div className="flex items-center justify-between gap-2">
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-medium ${categoryPalette.soft} ${categoryPalette.softText}`}
@@ -250,7 +270,10 @@ export function ProjectsScreen() {
                       {canManage(project) && (
                         <button
                           type="button"
-                          onClick={() => setModalState(project)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setModalState(project);
+                          }}
                           className="text-xs font-medium text-slate-500 hover:text-slate-900"
                         >
                           Edit
