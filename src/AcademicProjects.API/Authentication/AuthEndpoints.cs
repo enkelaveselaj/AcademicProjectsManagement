@@ -64,6 +64,11 @@ private static async Task<IResult> LoginAsync(
         return Results.Json(new { title = approvalErrors[0] }, statusCode: StatusCodes.Status403Forbidden);
     }
 
+    if (result.Errors.TryGetValue("credentials", out var credentialErrors))
+    {
+        return Results.Json(new { title = credentialErrors[0] }, statusCode: StatusCodes.Status401Unauthorized);
+    }
+
     return Results.Unauthorized();
 }
 

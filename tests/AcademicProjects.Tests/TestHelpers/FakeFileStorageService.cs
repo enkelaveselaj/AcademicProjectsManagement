@@ -27,4 +27,6 @@ public sealed class FakeFileStorageService : IFileStorageService
         _files.Remove(storedFileName);
         return Task.CompletedTask;
     }
+
+    public bool FileExists(string storedFileName) => _files.ContainsKey(storedFileName);
 }

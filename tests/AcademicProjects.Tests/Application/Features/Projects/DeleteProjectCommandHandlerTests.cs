@@ -21,7 +21,7 @@ public class DeleteProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteProjectCommandHandler(context, creator, new ProjectNotificationService(context));
+        var handler = new DeleteProjectCommandHandler(context, creator, new ProjectNotificationService(context), new FakeFileStorageService());
 
         await handler.Handle(
             new DeleteProjectCommand(project.Id),
@@ -40,7 +40,7 @@ public class DeleteProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context));
+        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context), new FakeFileStorageService());
 
         await handler.Handle(
             new DeleteProjectCommand(project.Id),
@@ -53,7 +53,7 @@ public class DeleteProjectCommandHandlerTests
     public async Task Handle_NonExistentProject_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context));
+        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context), new FakeFileStorageService());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -72,11 +72,45 @@ public class DeleteProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsMentor(), new ProjectNotificationService(context));
+        var handler = new DeleteProjectCommandHandler(context, TestCurrentUserService.AsMentor(), new ProjectNotificationService(context), new FakeFileStorageService());
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
             handler.Handle(
                 new DeleteProjectCommand(project.Id),
                 CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_ProjectWithDocuments_DeletesTheirStoredFilesToo()
+    {
+        using var context = TestDbContextFactory.Create();
+        var fileStorage = new FakeFileStorageService();
+        using var content = new MemoryStream([1, 2, 3]);
+        var storedFileName = await fileStorage.SaveAsync(content, ".pdf", CancellationToken.None);
+
+        var category = new Category { Name = "Category" };
+        var project = new Project { Title = "Title", Description = "Description", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        var document = new Document
+        {
+            FileName = "report.pdf",
+            StoredFileName = storedFileName,
+            ContentType = "application/pdf",
+            FileSizeBytes = 3,
+            ProjectId = project.Id,
+            Project = project
+        };
+        context.Categories.Add(category);
+        context.Projects.Add(project);
+        context.Documents.Add(document);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new DeleteProjectCommandHandler(
+            context, TestCurrentUserService.AsAdministrator(), new ProjectNotificationService(context), fileStorage);
+
+        await handler.Handle(
+            new DeleteProjectCommand(project.Id),
+            CancellationToken.None);
+
+        Assert.False(fileStorage.FileExists(storedFileName));
     }
 }

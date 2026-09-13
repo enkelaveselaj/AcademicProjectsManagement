@@ -11,7 +11,8 @@ namespace AcademicProjects.Application.Features.Projects.Commands;
 public sealed class DeleteProjectCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectNotificationService notifier)
+    ProjectNotificationService notifier,
+    IFileStorageService fileStorage)
     : IRequestHandler<DeleteProjectCommand>
 {
     public async Task Handle(
@@ -33,6 +34,11 @@ public sealed class DeleteProjectCommandHandler(
             throw new ForbiddenAccessException("Only the project's creator or an administrator can delete this project.");
         }
 
+        var storedFileNames = await context.Documents
+            .Where(document => document.ProjectId == project.Id)
+            .Select(document => document.StoredFileName)
+            .ToListAsync(cancellationToken);
+
         await notifier.NotifyMembersAsync(
             project.Id,
             currentUser.GetUserId(),
@@ -43,5 +49,10 @@ public sealed class DeleteProjectCommandHandler(
         context.Projects.Remove(project);
 
         await context.SaveChangesAsync(cancellationToken);
+
+        foreach (var storedFileName in storedFileNames)
+        {
+            await fileStorage.DeleteAsync(storedFileName, cancellationToken);
+        }
     }
 }

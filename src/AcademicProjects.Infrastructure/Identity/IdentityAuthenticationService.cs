@@ -92,13 +92,33 @@ public sealed class IdentityAuthenticationService(
         }
 
         var user = await userManager.FindByEmailAsync(request.Email.Trim());
-        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        if (user is null)
         {
             return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
             {
                 ["credentials"] = ["Invalid email or password."]
             });
         }
+
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
+            {
+                ["credentials"] = ["This account is temporarily locked due to too many failed sign-in attempts. Please try again later."]
+            });
+        }
+
+        if (!await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            await userManager.AccessFailedAsync(user);
+
+            return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
+            {
+                ["credentials"] = ["Invalid email or password."]
+            });
+        }
+
+        await userManager.ResetAccessFailedCountAsync(user);
 
         if (user.ApprovalStatus != ApprovalStatus.Approved)
         {
