@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthProvider } from "./lib/AuthProvider";
 import { useAuth } from "./lib/useAuth";
 import { Layout, type Screen } from "./components/Layout";
@@ -49,6 +49,12 @@ function AppShell() {
   const [authScreen, setAuthScreen] = useState<"login" | "signup">("login");
   const [activeScreen, setActiveScreen] = useState<Screen>("dashboard");
 
+  // Always land on the Dashboard for a fresh session, rather than carrying over
+  // whatever screen the previous signed-in user (possibly a different role) was on.
+  useEffect(() => {
+    setActiveScreen("dashboard");
+  }, [user?.id]);
+
   if (!user) {
     return authScreen === "login" ? (
       <LoginScreen onNavigateToSignUp={() => setAuthScreen("signup")} />
@@ -57,9 +63,13 @@ function AppShell() {
     );
   }
 
+  const isAdmin = user.role === "Administrator";
+  const isAdminOnlyScreen = activeScreen === "userManagement" || activeScreen === "categories";
+  const effectiveScreen: Screen = isAdminOnlyScreen && !isAdmin ? "dashboard" : activeScreen;
+
   return (
-    <Layout activeScreen={activeScreen} onNavigate={setActiveScreen}>
-      {renderScreen(activeScreen, setActiveScreen)}
+    <Layout activeScreen={effectiveScreen} onNavigate={setActiveScreen}>
+      {renderScreen(effectiveScreen, setActiveScreen)}
     </Layout>
   );
 }
