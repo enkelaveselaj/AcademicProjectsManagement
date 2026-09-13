@@ -149,7 +149,14 @@ export function ProjectsScreen() {
     });
   }, [projects, search, statusFilter, categoryFilter]);
 
-  function canManage(project: Project): boolean {
+  function canEditProject(project: Project): boolean {
+    const isMember = (assignmentsByProject.get(project.id) ?? []).some(
+      (assignment) => assignment.userId === user?.id,
+    );
+    return user?.role === "Administrator" || isMember;
+  }
+
+  function canDeleteProject(project: Project): boolean {
     return user?.role === "Administrator" || project.createdById === user?.id;
   }
 
@@ -268,7 +275,7 @@ export function ProjectsScreen() {
                       <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PROJECT_STATUS_BADGE[project.status]}`}>
                         {projectStatusLabel(project.status)}
                       </span>
-                      {canManage(project) && (
+                      {canEditProject(project) && (
                         <button
                           type="button"
                           onClick={(event) => {
@@ -358,7 +365,7 @@ export function ProjectsScreen() {
         <ProjectModal
           initial={modalState === "create" ? undefined : modalState}
           categories={categories}
-          canDelete={modalState !== "create" && canManage(modalState)}
+          canDelete={modalState !== "create" && canDeleteProject(modalState)}
           onClose={() => setModalState("closed")}
           onSaved={handleSaved}
         />

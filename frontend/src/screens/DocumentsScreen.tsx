@@ -107,7 +107,7 @@ export function DocumentsScreen() {
   );
 
   function canManage(doc: DocumentFile): boolean {
-    return user?.role === "Administrator" || doc.uploadedById === user?.id || myProjectIds.has(doc.projectId);
+    return user?.role === "Administrator" || myProjectIds.has(doc.projectId);
   }
 
   const categoryCounts = useMemo(() => {
