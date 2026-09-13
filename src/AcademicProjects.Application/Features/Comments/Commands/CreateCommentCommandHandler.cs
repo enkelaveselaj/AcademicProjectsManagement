@@ -13,7 +13,6 @@ namespace AcademicProjects.Application.Features.Comments.Commands;
 public sealed class CreateCommentCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess,
     ProjectNotificationService notifier)
     : IRequestHandler<CreateCommentCommand, CommentDto>
 {
@@ -32,12 +31,6 @@ public sealed class CreateCommentCommandHandler(
         }
 
         var userId = currentUser.GetUserId();
-
-        if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsMemberAsync(request.ProjectId, userId, cancellationToken))
-        {
-            throw new ForbiddenAccessException("Only members of this project can comment on it.");
-        }
 
         var comment = new Comment
         {

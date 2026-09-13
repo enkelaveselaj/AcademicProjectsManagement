@@ -12,7 +12,6 @@ namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 public sealed class UpdateProjectMilestoneCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess,
     ProjectNotificationService notifier)
     : IRequestHandler<UpdateProjectMilestoneCommand, ProjectMilestoneDto>
 {
@@ -25,26 +24,18 @@ public sealed class UpdateProjectMilestoneCommandHandler(
                 milestone => milestone.Id == request.Id,
                 cancellationToken);
 
-        if (milestone is null)
+        if (milestone is null || milestone.ProjectId != request.ProjectId)
         {
+            // A ProjectId that doesn't match the milestone's actual project is treated as
+            // not-found rather than validated against the target project - a milestone can't
+            // be reparented to a different project through this endpoint.
             throw new NotFoundException("ProjectMilestone", request.Id);
         }
 
-        if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsProjectMentorAsync(milestone.ProjectId, currentUser.GetUserId(), cancellationToken))
-        {
-            throw new ForbiddenAccessException("Only the project mentor or an administrator can update this milestone.");
-        }
-
         var projectTitle = await context.Projects
-            .Where(project => project.Id == request.ProjectId)
+            .Where(project => project.Id == milestone.ProjectId)
             .Select(project => project.Title)
             .FirstOrDefaultAsync(cancellationToken);
-
-        if (projectTitle is null)
-        {
-            throw new NotFoundException("Project", request.ProjectId);
-        }
 
         if (request.Status == MilestoneStatus.Completed && milestone.Status != MilestoneStatus.Completed)
         {
@@ -59,10 +50,9 @@ public sealed class UpdateProjectMilestoneCommandHandler(
         milestone.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         milestone.DueDate = request.DueDate;
         milestone.Status = request.Status;
-        milestone.ProjectId = request.ProjectId;
 
         await notifier.NotifyMembersAsync(
-            request.ProjectId,
+            milestone.ProjectId,
             currentUser.GetUserId(),
             $"Milestone updated on project '{projectTitle}': {milestone.Title}.",
             NotificationType.Information,

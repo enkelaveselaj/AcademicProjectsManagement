@@ -7,7 +7,7 @@ using AcademicProjects.Application.Interfaces;
 
 namespace AcademicProjects.Infrastructure.Persistence;
 
-public class ApplicationDbContext 
+public class ApplicationDbContext
     : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>,
     IApplicationDbContext
 {

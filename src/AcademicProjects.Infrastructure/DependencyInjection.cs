@@ -53,33 +53,33 @@ public static class DependencyInjection
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidIssuer = jwtOptions.Issuer,
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.Issuer,
 
-        ValidateAudience = true,
-        ValidAudience = jwtOptions.Audience,
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.Audience,
 
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtOptions.Key)),
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtOptions.Key)),
 
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
-    };
-});
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
 
-services.AddAuthorization();
+        services.AddAuthorization();
 
         services.AddScoped<IApplicationDbContext>(
-        provider => provider.GetRequiredService<ApplicationDbContext>());
+            provider => provider.GetRequiredService<ApplicationDbContext>());
 
         return services;
     }

@@ -13,7 +13,6 @@ namespace AcademicProjects.Application.Features.Documents.Commands;
 public sealed class CreateDocumentCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess,
     ProjectNotificationService notifier,
     IFileStorageService fileStorage)
     : IRequestHandler<CreateDocumentCommand, DocumentDto>
@@ -33,12 +32,6 @@ public sealed class CreateDocumentCommandHandler(
         }
 
         var userId = currentUser.GetUserId();
-
-        if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsMemberAsync(request.ProjectId, userId, cancellationToken))
-        {
-            throw new ForbiddenAccessException("Only members of this project can upload documents to it.");
-        }
 
         var storedFileName = await fileStorage.SaveAsync(
             request.Content,

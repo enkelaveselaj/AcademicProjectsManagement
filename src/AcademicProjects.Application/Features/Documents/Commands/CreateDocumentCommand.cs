@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Features.Documents.DTOs;
 using MediatR;
 
@@ -8,4 +9,7 @@ public sealed record CreateDocumentCommand(
     string ContentType,
     long FileSizeBytes,
     Stream Content,
-    Guid ProjectId) : IRequest<DocumentDto>;
+    Guid ProjectId) : IRequest<DocumentDto>, IProjectScopedRequest
+{
+    public ProjectAccessLevel RequiredAccess => ProjectAccessLevel.Member;
+}

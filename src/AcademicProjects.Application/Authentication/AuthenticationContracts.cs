@@ -1,18 +1,4 @@
-using AcademicProjects.Domain.Enums;
-
 namespace AcademicProjects.Application.Authentication;
-
-public sealed record RegisterUserRequest(
-    string FirstName,
-    string LastName,
-    string Email,
-    string Password,
-    DateTime DateOfBirth,
-    string PersonalIdNumber,
-    UserRole RequestedRole,
-    string? StudentId);
-
-public sealed record LoginRequest(string Email, string Password);
 
 public sealed record RegisteredUser(Guid Id, string Email, string Role, string ApprovalStatus);
 
@@ -35,12 +21,6 @@ public sealed record PendingUser(
     string PersonalIdNumber,
     string? StudentId,
     DateTime RequestedAt);
-
-public sealed record ChangeUserRoleRequest(string Role);
-
-public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
-
-public sealed record ResetUserPasswordRequest(string NewPassword);
 
 /// <summary>
 /// Minimal, non-admin-gated name lookup so any authenticated user can resolve teammate/mentor

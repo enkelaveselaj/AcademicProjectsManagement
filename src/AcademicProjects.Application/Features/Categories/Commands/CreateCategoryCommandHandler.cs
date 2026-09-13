@@ -1,29 +1,30 @@
-using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.DTOs;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace AcademicProjects.Application.Features.Categories.Commands;
 
 public sealed class CreateCategoryCommandHandler(
-    IApplicationDbContext context,
-    ICurrentUserService currentUser)
+    IApplicationDbContext context)
     : IRequestHandler<CreateCategoryCommand, CategoryDto>
 {
     public async Task<CategoryDto> Handle(
         CreateCategoryCommand request,
         CancellationToken cancellationToken)
     {
-        if (!currentUser.IsAdministrator())
+        var name = request.Name.Trim();
+
+        if (await context.Categories.AnyAsync(category => category.Name == name, cancellationToken))
         {
-            throw new ForbiddenAccessException("Only administrators can create categories.");
+            throw new ConflictException($"A category named '{name}' already exists.");
         }
 
         var category = new Category
         {
-            Name = request.Name.Trim(),
+            Name = name,
             Description = string.IsNullOrWhiteSpace(request.Description)
                 ? null
                 : request.Description.Trim()

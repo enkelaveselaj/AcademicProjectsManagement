@@ -15,7 +15,7 @@ public class UpdateCategoryCommandHandlerTests
         context.Categories.Add(category);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateCategoryCommandHandler(context, TestCurrentUserService.AsAdministrator());
+        var handler = new UpdateCategoryCommandHandler(context);
 
         var result = await handler.Handle(
             new UpdateCategoryCommand(category.Id, " New Name ", " New Description "),
@@ -30,7 +30,7 @@ public class UpdateCategoryCommandHandlerTests
     public async Task Handle_NonExistentCategory_ThrowsNotFoundException()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new UpdateCategoryCommandHandler(context, TestCurrentUserService.AsAdministrator());
+        var handler = new UpdateCategoryCommandHandler(context);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -39,18 +39,37 @@ public class UpdateCategoryCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonAdministrator_ThrowsForbiddenAccessException()
+    public async Task Handle_RenamingToAnotherCategorysName_ThrowsConflictException()
     {
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Old Name" };
+        var other = new Category { Name = "Taken Name" };
+        context.Categories.AddRange(category, other);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new UpdateCategoryCommandHandler(context);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            handler.Handle(
+                new UpdateCategoryCommand(category.Id, " Taken Name ", null),
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_RenamingToItsOwnCurrentName_Succeeds()
+    {
+        using var context = TestDbContextFactory.Create();
+        var category = new Category { Name = "Same Name", Description = "Old" };
         context.Categories.Add(category);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateCategoryCommandHandler(context, TestCurrentUserService.AsStudent());
+        var handler = new UpdateCategoryCommandHandler(context);
 
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            handler.Handle(
-                new UpdateCategoryCommand(category.Id, "New Name", "Description"),
-                CancellationToken.None));
+        var result = await handler.Handle(
+            new UpdateCategoryCommand(category.Id, "Same Name", "New Description"),
+            CancellationToken.None);
+
+        Assert.Equal("Same Name", result.Name);
+        Assert.Equal("New Description", result.Description);
     }
 }

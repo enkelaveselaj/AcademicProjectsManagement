@@ -18,6 +18,9 @@ public static class DependencyInjection
                 typeof(DependencyInjection).Assembly);
 
             configuration.AddOpenBehavior(
+                typeof(AuthorizationBehavior<,>));
+
+            configuration.AddOpenBehavior(
                 typeof(ValidationBehavior<,>));
         });
 

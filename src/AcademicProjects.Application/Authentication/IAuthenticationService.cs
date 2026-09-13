@@ -1,17 +1,18 @@
+using AcademicProjects.Application.Features.Auth.Commands;
+
 namespace AcademicProjects.Application.Authentication;
 
 public interface IAuthenticationService
 {
     Task<ServiceResult<RegisteredUser>> RegisterAsync(
-        RegisterUserRequest request,
+        RegisterUserCommand request,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<AccessToken>> LoginAsync(
-        LoginRequest request,
+    Task<AccessToken> LoginAsync(
+        LoginCommand request,
         CancellationToken cancellationToken = default);
 
     Task<ServiceResult<bool>> ChangePasswordAsync(
-        Guid userId,
-        ChangePasswordRequest request,
+        ChangePasswordCommand request,
         CancellationToken cancellationToken = default);
 }

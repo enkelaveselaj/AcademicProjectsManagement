@@ -1,4 +1,3 @@
-using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.ProjectMilestones.Commands;
@@ -27,7 +26,7 @@ public class UpdateProjectMilestoneCommandHandlerTests
         context.ProjectMilestones.Add(milestone);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateProjectMilestoneCommand(milestone.Id, " New Title ", "New description", FutureDueDate, MilestoneStatus.InProgress, project.Id),
@@ -46,7 +45,7 @@ public class UpdateProjectMilestoneCommandHandlerTests
         var handler = new UpdateProjectMilestoneCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
+            new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -69,7 +68,7 @@ public class UpdateProjectMilestoneCommandHandlerTests
         context.ProjectMilestones.Add(milestone);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -78,50 +77,33 @@ public class UpdateProjectMilestoneCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_UnrelatedMentor_ThrowsForbiddenAccessException()
+    public async Task Handle_ProjectIdDoesNotMatchMilestonesProject_ThrowsNotFoundException()
     {
+        // A milestone can't be "reparented" to a different project by sending a mismatched
+        // ProjectId - that's treated the same as the milestone not existing at all.
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        var otherProject = new Project { Title = "Other", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        var mentor = TestCurrentUserService.AsMentor();
+        var mentorAssignment = new ProjectAssignment { ProjectId = otherProject.Id, Project = otherProject, UserId = mentor.UserId!.Value, Role = "Mentor" };
         var milestone = new ProjectMilestone { Title = "Title", DueDate = FutureDueDate, ProjectId = project.Id, Project = project };
         context.Categories.Add(category);
-        context.Projects.Add(project);
+        context.Projects.AddRange(project, otherProject);
+        context.ProjectAssignments.Add(mentorAssignment);
         context.ProjectMilestones.Add(milestone);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectMilestoneCommandHandler(
-            context,
-            TestCurrentUserService.AsMentor(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectNotificationService(context));
 
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+        // The caller is the mentor of otherProject, and tries to update a milestone that
+        // actually belongs to project by claiming it belongs to otherProject instead.
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
-                new UpdateProjectMilestoneCommand(milestone.Id, "Title", null, FutureDueDate, MilestoneStatus.Pending, project.Id),
+                new UpdateProjectMilestoneCommand(milestone.Id, "Title", null, FutureDueDate, MilestoneStatus.Pending, otherProject.Id),
                 CancellationToken.None));
-    }
 
-    [Fact]
-    public async Task Handle_ProjectMemberStudent_ThrowsForbiddenAccessException()
-    {
-        // Only the project's mentor (or an administrator) may update milestones - students cannot.
-        using var context = TestDbContextFactory.Create();
-        var category = new Category { Name = "Category" };
-        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        var student = TestCurrentUserService.AsStudent();
-        var studentAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = student.UserId!.Value, Role = "Student" };
-        var milestone = new ProjectMilestone { Title = "Title", DueDate = FutureDueDate, ProjectId = project.Id, Project = project };
-        context.Categories.Add(category);
-        context.Projects.Add(project);
-        context.ProjectAssignments.Add(studentAssignment);
-        context.ProjectMilestones.Add(milestone);
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var handler = new UpdateProjectMilestoneCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            handler.Handle(
-                new UpdateProjectMilestoneCommand(milestone.Id, "Title", null, FutureDueDate, MilestoneStatus.InProgress, project.Id),
-                CancellationToken.None));
+        Assert.Equal(project.Id, milestone.ProjectId);
     }
 
     [Fact]
@@ -139,7 +121,7 @@ public class UpdateProjectMilestoneCommandHandlerTests
         context.ProjectMilestones.Add(milestone);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateProjectMilestoneCommand(milestone.Id, "Title", null, FutureDueDate, MilestoneStatus.Completed, project.Id),
@@ -172,7 +154,7 @@ public class UpdateProjectMilestoneCommandHandlerTests
         context.ProjectMilestones.Add(milestone);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectMilestoneCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateProjectMilestoneCommand(milestone.Id, "Title", null, FutureDueDate, MilestoneStatus.InProgress, project.Id),

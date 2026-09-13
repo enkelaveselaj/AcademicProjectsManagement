@@ -10,6 +10,12 @@ public static class ProblemDetailsFactory
         exception switch
         {
             ValidationException validationException => CreateValidationProblem(validationException),
+            InvalidCredentialsException invalidCredentialsException => new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Invalid credentials.",
+                Detail = invalidCredentialsException.Message
+            },
             ForbiddenAccessException forbiddenException => new ProblemDetails
             {
                 Status = StatusCodes.Status403Forbidden,

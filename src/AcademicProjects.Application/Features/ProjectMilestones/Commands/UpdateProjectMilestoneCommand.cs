@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Features.ProjectMilestones.DTOs;
 using AcademicProjects.Domain.Enums;
 using MediatR;
@@ -10,4 +11,7 @@ public sealed record UpdateProjectMilestoneCommand(
     string? Description,
     DateTime DueDate,
     MilestoneStatus Status,
-    Guid ProjectId) : IRequest<ProjectMilestoneDto>;
+    Guid ProjectId) : IRequest<ProjectMilestoneDto>, IProjectScopedRequest
+{
+    public ProjectAccessLevel RequiredAccess => ProjectAccessLevel.Mentor;
+}

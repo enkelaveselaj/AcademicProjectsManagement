@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Features.Projects.DTOs;
 using AcademicProjects.Domain.Enums;
 using MediatR;
@@ -10,4 +11,9 @@ public sealed record UpdateProjectCommand(
     string? Description,
     ProjectStatus Status,
     Guid CategoryId,
-    string? StatusChangeComment = null) : IRequest<ProjectDto>;
+    string? StatusChangeComment = null) : IRequest<ProjectDto>, IProjectScopedRequest
+{
+    public Guid ProjectId => Id;
+
+    public ProjectAccessLevel RequiredAccess => ProjectAccessLevel.Member;
+}

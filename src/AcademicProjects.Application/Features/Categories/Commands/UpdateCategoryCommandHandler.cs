@@ -1,4 +1,3 @@
-using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -8,19 +7,13 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Categories.Commands;
 
 public sealed class UpdateCategoryCommandHandler(
-    IApplicationDbContext context,
-    ICurrentUserService currentUser)
+    IApplicationDbContext context)
     : IRequestHandler<UpdateCategoryCommand, CategoryDto>
 {
     public async Task<CategoryDto> Handle(
         UpdateCategoryCommand request,
         CancellationToken cancellationToken)
     {
-        if (!currentUser.IsAdministrator())
-        {
-            throw new ForbiddenAccessException("Only administrators can update categories.");
-        }
-
         var category = await context.Categories
             .FirstOrDefaultAsync(
                 category => category.Id == request.Id,
@@ -31,7 +24,15 @@ public sealed class UpdateCategoryCommandHandler(
             throw new NotFoundException("Category", request.Id);
         }
 
-        category.Name = request.Name.Trim();
+        var name = request.Name.Trim();
+
+        if (await context.Categories.AnyAsync(
+                other => other.Id != category.Id && other.Name == name, cancellationToken))
+        {
+            throw new ConflictException($"A category named '{name}' already exists.");
+        }
+
+        category.Name = name;
         category.Description = string.IsNullOrWhiteSpace(request.Description)
             ? null
             : request.Description.Trim();

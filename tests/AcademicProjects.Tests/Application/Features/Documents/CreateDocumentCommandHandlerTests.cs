@@ -1,4 +1,3 @@
-using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Documents.Commands;
@@ -26,7 +25,7 @@ public class CreateDocumentCommandHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new CreateDocumentCommandHandler(
-            context, student, new ProjectAccessService(context), new ProjectNotificationService(context), new FakeFileStorageService());
+            context, student, new ProjectNotificationService(context), new FakeFileStorageService());
 
         var result = await handler.Handle(
             new CreateDocumentCommand(" report.pdf ", "application/pdf", 4, SampleContent(), project.Id),
@@ -46,32 +45,11 @@ public class CreateDocumentCommandHandlerTests
         var handler = new CreateDocumentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context), new ProjectNotificationService(context), new FakeFileStorageService());
+            new ProjectNotificationService(context), new FakeFileStorageService());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new CreateDocumentCommand("file.pdf", "application/pdf", 4, SampleContent(), Guid.NewGuid()),
-                CancellationToken.None));
-    }
-
-    [Fact]
-    public async Task Handle_NonMember_ThrowsForbiddenAccessException()
-    {
-        using var context = TestDbContextFactory.Create();
-        var category = new Category { Name = "Category" };
-        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        context.Categories.Add(category);
-        context.Projects.Add(project);
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var handler = new CreateDocumentCommandHandler(
-            context,
-            TestCurrentUserService.AsStudent(),
-            new ProjectAccessService(context), new ProjectNotificationService(context), new FakeFileStorageService());
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            handler.Handle(
-                new CreateDocumentCommand("file.pdf", "application/pdf", 4, SampleContent(), project.Id),
                 CancellationToken.None));
     }
 }

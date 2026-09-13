@@ -42,12 +42,19 @@ export async function apiRequest<TResponse>(
     return undefined as TResponse;
   }
 
-  const isJson = response.headers.get("content-type")?.includes("application/json");
+  // ASP.NET Core's error responses (400/401/403/404/409, ...) are served as
+  // "application/problem+json", not "application/json" - match on "json" generally so
+  // both success bodies and RFC 7807 problem bodies get parsed instead of silently
+  // falling back to the generic HTTP status text below.
+  const isJson = response.headers.get("content-type")?.includes("json");
   const data = isJson ? await response.json() : undefined;
 
   if (!response.ok) {
-    const problemTitle = data?.title ?? response.statusText ?? "Request failed";
-    throw new ApiError(problemTitle, response.status, data?.errors);
+    // RFC 7807: `title` is a generic, problem-type-level summary (e.g. "Access denied.");
+    // `detail` is the specific, human-readable explanation for this occurrence. Prefer
+    // `detail` so users see the actually useful message instead of the generic category.
+    const message = data?.detail ?? data?.title ?? response.statusText ?? "Request failed";
+    throw new ApiError(message, response.status, data?.errors);
   }
 
   return data as TResponse;

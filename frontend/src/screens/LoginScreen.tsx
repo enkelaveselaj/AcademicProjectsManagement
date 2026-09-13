@@ -24,9 +24,7 @@ export function LoginScreen({ onNavigateToSignUp }: LoginScreenProps) {
     try {
       await signIn(email, password);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setError("Invalid email or password.");
-      } else if (err instanceof ApiError && err.status === 403) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
         setError(err.message);
       } else {
         setError("Something went wrong. Please try again.");

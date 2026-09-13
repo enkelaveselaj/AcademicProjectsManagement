@@ -1,5 +1,6 @@
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Categories.Commands;
+using AcademicProjects.Domain.Entities;
 using AcademicProjects.Tests.TestHelpers;
 
 namespace AcademicProjects.Tests.Application.Features.Categories;
@@ -10,7 +11,7 @@ public class CreateCategoryCommandHandlerTests
     public async Task Handle_ValidCommand_CreatesCategoryAndReturnsDto()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new CreateCategoryCommandHandler(context, TestCurrentUserService.AsAdministrator());
+        var handler = new CreateCategoryCommandHandler(context);
 
         var result = await handler.Handle(
             new CreateCategoryCommand(" Machine Learning ", " AI related projects "),
@@ -26,7 +27,7 @@ public class CreateCategoryCommandHandlerTests
     public async Task Handle_WhitespaceDescription_StoresNull()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new CreateCategoryCommandHandler(context, TestCurrentUserService.AsAdministrator());
+        var handler = new CreateCategoryCommandHandler(context);
 
         var result = await handler.Handle(
             new CreateCategoryCommand("Web Development", "   "),
@@ -36,14 +37,17 @@ public class CreateCategoryCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonAdministrator_ThrowsForbiddenAccessException()
+    public async Task Handle_DuplicateName_ThrowsConflictException()
     {
         using var context = TestDbContextFactory.Create();
-        var handler = new CreateCategoryCommandHandler(context, TestCurrentUserService.AsMentor());
+        context.Categories.Add(new Category { Name = "Machine Learning" });
+        await context.SaveChangesAsync(CancellationToken.None);
 
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+        var handler = new CreateCategoryCommandHandler(context);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
             handler.Handle(
-                new CreateCategoryCommand("Category", null),
+                new CreateCategoryCommand(" Machine Learning ", null),
                 CancellationToken.None));
     }
 }

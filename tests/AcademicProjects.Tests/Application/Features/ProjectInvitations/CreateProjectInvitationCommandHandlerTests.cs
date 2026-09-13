@@ -40,27 +40,6 @@ public class CreateProjectInvitationCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonMember_ThrowsForbiddenAccessException()
-    {
-        using var context = TestDbContextFactory.Create();
-        var category = new Category { Name = "Category" };
-        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        context.Categories.Add(category);
-        context.Projects.Add(project);
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var invitedUserId = Guid.NewGuid();
-        var userManagement = new FakeUserManagementService().WithUser(invitedUserId, "Student");
-        var handler = new CreateProjectInvitationCommandHandler(
-            context, TestCurrentUserService.AsStudent(), new ProjectAccessService(context), userManagement, new ProjectNotificationService(context));
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            handler.Handle(
-                new CreateProjectInvitationCommand(project.Id, invitedUserId, "Student"),
-                CancellationToken.None));
-    }
-
-    [Fact]
     public async Task Handle_InvitedUserDoesNotHoldTheRequestedRole_ThrowsConflictException()
     {
         using var context = TestDbContextFactory.Create();

@@ -13,7 +13,6 @@ namespace AcademicProjects.Application.Features.ProjectAssignments.Commands;
 public sealed class CreateProjectAssignmentCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess,
     ProjectNotificationService notifier)
     : IRequestHandler<CreateProjectAssignmentCommand, ProjectAssignmentDto>
 {
@@ -29,12 +28,6 @@ public sealed class CreateProjectAssignmentCommandHandler(
         if (projectTitle is null)
         {
             throw new NotFoundException("Project", request.ProjectId);
-        }
-
-        if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsMemberAsync(request.ProjectId, currentUser.GetUserId(), cancellationToken))
-        {
-            throw new ForbiddenAccessException("Only a project member or an administrator can assign users to this project.");
         }
 
         var role = request.Role.Trim();

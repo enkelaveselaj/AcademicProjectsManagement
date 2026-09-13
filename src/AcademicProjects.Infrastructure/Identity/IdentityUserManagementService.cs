@@ -3,6 +3,7 @@ using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
+using AcademicProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,30 +11,43 @@ namespace AcademicProjects.Infrastructure.Identity;
 
 public sealed class IdentityUserManagementService(
     UserManager<ApplicationUser> userManager,
+    ApplicationDbContext identityContext,
     IApplicationDbContext context) : IUserManagementService
 {
+    /// <summary>
+    /// Loads users (optionally filtered) together with their role name in a single query,
+    /// instead of one extra round-trip per user via UserManager.GetRolesAsync.
+    /// </summary>
+    private async Task<List<(ApplicationUser User, string RoleName)>> GetUsersWithRolesAsync(
+        IQueryable<ApplicationUser> usersQuery,
+        CancellationToken cancellationToken)
+    {
+        var rows = await (
+            from user in usersQuery
+            join userRole in identityContext.UserRoles on user.Id equals userRole.UserId into userRoles
+            from userRole in userRoles.DefaultIfEmpty()
+            join role in identityContext.Roles on userRole.RoleId equals role.Id into roles
+            from role in roles.DefaultIfEmpty()
+            select new { User = user, RoleName = role.Name })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(row => row.User.Id)
+            .Select(group => (
+                group.First().User,
+                group.Select(row => row.RoleName).FirstOrDefault(name => name is not null) ?? string.Empty))
+            .ToList();
+    }
+
     public async Task<IReadOnlyList<UserSummary>> GetUsersAsync(
         CancellationToken cancellationToken = default)
     {
-        var users = await userManager.Users
-            .OrderBy(user => user.Email)
-            .ToListAsync(cancellationToken);
+        var usersWithRoles = await GetUsersWithRolesAsync(userManager.Users, cancellationToken);
 
-        var summaries = new List<UserSummary>(users.Count);
-
-        foreach (var user in users)
-        {
-            var roles = await userManager.GetRolesAsync(user);
-
-            summaries.Add(new UserSummary(
-                user.Id,
-                user.FirstName,
-                user.LastName,
-                user.Email ?? string.Empty,
-                roles.FirstOrDefault() ?? string.Empty));
-        }
-
-        return summaries;
+        return usersWithRoles
+            .OrderBy(x => x.User.Email)
+            .Select(x => new UserSummary(x.User.Id, x.User.FirstName, x.User.LastName, x.User.Email ?? string.Empty, x.RoleName))
+            .ToList();
     }
 
     public async Task<ServiceResult<UserSummary>> ChangeUserRoleAsync(
@@ -89,30 +103,23 @@ public sealed class IdentityUserManagementService(
     public async Task<IReadOnlyList<PendingUser>> GetPendingUsersAsync(
         CancellationToken cancellationToken = default)
     {
-        var pendingUsers = await userManager.Users
-            .Where(user => user.ApprovalStatus == ApprovalStatus.Pending)
-            .OrderBy(user => user.CreatedAt)
-            .ToListAsync(cancellationToken);
+        var usersWithRoles = await GetUsersWithRolesAsync(
+            userManager.Users.Where(user => user.ApprovalStatus == ApprovalStatus.Pending),
+            cancellationToken);
 
-        var results = new List<PendingUser>(pendingUsers.Count);
-
-        foreach (var user in pendingUsers)
-        {
-            var roles = await userManager.GetRolesAsync(user);
-
-            results.Add(new PendingUser(
-                user.Id,
-                user.FirstName,
-                user.LastName,
-                user.Email ?? string.Empty,
-                roles.FirstOrDefault() ?? string.Empty,
-                user.DateOfBirth,
-                user.PersonalIdNumber,
-                user.StudentId,
-                user.CreatedAt));
-        }
-
-        return results;
+        return usersWithRoles
+            .OrderBy(x => x.User.CreatedAt)
+            .Select(x => new PendingUser(
+                x.User.Id,
+                x.User.FirstName,
+                x.User.LastName,
+                x.User.Email ?? string.Empty,
+                x.RoleName,
+                x.User.DateOfBirth,
+                x.User.PersonalIdNumber,
+                x.User.StudentId,
+                x.User.CreatedAt))
+            .ToList();
     }
 
     public async Task<ServiceResult<UserSummary>> ApproveUserAsync(
@@ -159,25 +166,14 @@ public sealed class IdentityUserManagementService(
     public async Task<IReadOnlyList<UserDirectoryEntry>> GetUserDirectoryAsync(
         CancellationToken cancellationToken = default)
     {
-        var users = await userManager.Users
-            .Where(user => user.ApprovalStatus == ApprovalStatus.Approved)
-            .OrderBy(user => user.FirstName)
-            .ToListAsync(cancellationToken);
+        var usersWithRoles = await GetUsersWithRolesAsync(
+            userManager.Users.Where(user => user.ApprovalStatus == ApprovalStatus.Approved),
+            cancellationToken);
 
-        var entries = new List<UserDirectoryEntry>(users.Count);
-
-        foreach (var user in users)
-        {
-            var roles = await userManager.GetRolesAsync(user);
-
-            entries.Add(new UserDirectoryEntry(
-                user.Id,
-                user.FirstName,
-                user.LastName,
-                roles.FirstOrDefault() ?? string.Empty));
-        }
-
-        return entries;
+        return usersWithRoles
+            .OrderBy(x => x.User.FirstName)
+            .Select(x => new UserDirectoryEntry(x.User.Id, x.User.FirstName, x.User.LastName, x.RoleName))
+            .ToList();
     }
 
     public async Task<string?> GetUserRoleAsync(

@@ -37,12 +37,6 @@ public sealed class CreateProjectInvitationCommandHandler(
 
         var actorId = currentUser.GetUserId();
 
-        if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsMemberAsync(request.ProjectId, actorId, cancellationToken))
-        {
-            throw new ForbiddenAccessException("Only a project member or an administrator can invite users to this project.");
-        }
-
         if (request.InvitedUserId == actorId)
         {
             throw new ConflictException("You cannot invite yourself.");

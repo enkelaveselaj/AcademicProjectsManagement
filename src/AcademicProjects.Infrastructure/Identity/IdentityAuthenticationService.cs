@@ -1,4 +1,6 @@
 using AcademicProjects.Application.Authentication;
+using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Features.Auth.Commands;
 using AcademicProjects.Application.Interfaces;
 using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
@@ -13,19 +15,16 @@ public sealed class IdentityAuthenticationService(
     IApplicationDbContext context) : IAuthenticationService
 {
     public async Task<ServiceResult<RegisteredUser>> RegisterAsync(
-        RegisterUserRequest request,
+        RegisterUserCommand request,
         CancellationToken cancellationToken = default)
     {
-        var errors = ValidateRegistration(request);
-        if (errors.Count > 0)
-        {
-            return ServiceResult<RegisteredUser>.Failure(errors);
-        }
-
         var email = request.Email.Trim();
         var personalIdNumber = request.PersonalIdNumber.Trim();
         var studentId = request.RequestedRole == UserRole.Student ? request.StudentId!.Trim() : null;
 
+        // These uniqueness checks need Identity's user data, which isn't visible outside
+        // Infrastructure - the rest of the request's validation lives in
+        // RegisterUserCommandValidator alongside every other command's FluentValidation rules.
         if (await userManager.Users.AnyAsync(user => user.PersonalIdNumber == personalIdNumber, cancellationToken))
         {
             return ServiceResult<RegisteredUser>.Failure(new Dictionary<string, string[]>
@@ -79,80 +78,51 @@ public sealed class IdentityAuthenticationService(
                 user.ApprovalStatus.ToString()));
     }
 
-    public async Task<ServiceResult<AccessToken>> LoginAsync(
-        LoginRequest request,
+    public async Task<AccessToken> LoginAsync(
+        LoginCommand request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-        {
-            return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
-            {
-                ["credentials"] = ["Invalid email or password."]
-            });
-        }
-
         var user = await userManager.FindByEmailAsync(request.Email.Trim());
         if (user is null)
         {
-            return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
-            {
-                ["credentials"] = ["Invalid email or password."]
-            });
+            throw new InvalidCredentialsException("Invalid email or password.");
         }
 
         if (await userManager.IsLockedOutAsync(user))
         {
-            return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
-            {
-                ["credentials"] = ["This account is temporarily locked due to too many failed sign-in attempts. Please try again later."]
-            });
+            throw new InvalidCredentialsException(
+                "This account is temporarily locked due to too many failed sign-in attempts. Please try again later.");
         }
 
         if (!await userManager.CheckPasswordAsync(user, request.Password))
         {
             await userManager.AccessFailedAsync(user);
 
-            return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
-            {
-                ["credentials"] = ["Invalid email or password."]
-            });
+            throw new InvalidCredentialsException("Invalid email or password.");
         }
 
         await userManager.ResetAccessFailedCountAsync(user);
 
         if (user.ApprovalStatus != ApprovalStatus.Approved)
         {
-            return ServiceResult<AccessToken>.Failure(new Dictionary<string, string[]>
-            {
-                ["approval"] = ["Your account is awaiting administrator approval."]
-            });
+            throw new ForbiddenAccessException("Your account is awaiting administrator approval.");
         }
 
         var roles = await userManager.GetRolesAsync(user);
-        var token = accessTokenGenerator.Generate(
+
+        return accessTokenGenerator.Generate(
             user.Id,
             user.Email ?? string.Empty,
             user.FirstName,
             user.LastName,
             roles);
-
-        return ServiceResult<AccessToken>.Success(token);
     }
 
     public async Task<ServiceResult<bool>> ChangePasswordAsync(
-        Guid userId,
-        ChangePasswordRequest request,
+        ChangePasswordCommand request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
-        {
-            return ServiceResult<bool>.Failure(new Dictionary<string, string[]>
-            {
-                ["password"] = ["Current and new password are required."]
-            });
-        }
-
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        var user = await userManager.FindByIdAsync(request.UserId.ToString());
         if (user is null)
         {
             return ServiceResult<bool>.Failure(new Dictionary<string, string[]>
@@ -196,57 +166,6 @@ public sealed class IdentityAuthenticationService(
         }
 
         await context.SaveChangesAsync(cancellationToken);
-    }
-
-    private static Dictionary<string, string[]> ValidateRegistration(RegisterUserRequest request)
-    {
-        var errors = new Dictionary<string, string[]>();
-
-        if (string.IsNullOrWhiteSpace(request.FirstName))
-        {
-            errors["firstName"] = ["First name is required."];
-        }
-
-        if (string.IsNullOrWhiteSpace(request.LastName))
-        {
-            errors["lastName"] = ["Last name is required."];
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Email))
-        {
-            errors["email"] = ["Email is required."];
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Password))
-        {
-            errors["password"] = ["Password is required."];
-        }
-
-        if (string.IsNullOrWhiteSpace(request.PersonalIdNumber))
-        {
-            errors["personalIdNumber"] = ["A personal ID number is required."];
-        }
-
-        if (request.RequestedRole is not (UserRole.Student or UserRole.Mentor))
-        {
-            errors["requestedRole"] = ["You can only request a Student or Mentor account."];
-        }
-        else if (request.RequestedRole == UserRole.Student && string.IsNullOrWhiteSpace(request.StudentId))
-        {
-            errors["studentId"] = ["A student ID is required for a Student account."];
-        }
-
-        var today = DateTime.UtcNow.Date;
-        if (request.DateOfBirth.Date > today)
-        {
-            errors["dateOfBirth"] = ["Date of birth cannot be in the future."];
-        }
-        else if (request.DateOfBirth.Date > today.AddYears(-16))
-        {
-            errors["dateOfBirth"] = ["You must be at least 16 years old to register."];
-        }
-
-        return errors;
     }
 
     /// <summary>

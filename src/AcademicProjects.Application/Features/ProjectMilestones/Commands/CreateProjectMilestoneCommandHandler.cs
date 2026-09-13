@@ -13,7 +13,6 @@ namespace AcademicProjects.Application.Features.ProjectMilestones.Commands;
 public sealed class CreateProjectMilestoneCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUser,
-    ProjectAccessService projectAccess,
     ProjectNotificationService notifier)
     : IRequestHandler<CreateProjectMilestoneCommand, ProjectMilestoneDto>
 {
@@ -29,12 +28,6 @@ public sealed class CreateProjectMilestoneCommandHandler(
         if (projectTitle is null)
         {
             throw new NotFoundException("Project", request.ProjectId);
-        }
-
-        if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsProjectMentorAsync(request.ProjectId, currentUser.GetUserId(), cancellationToken))
-        {
-            throw new ForbiddenAccessException("Only the project mentor or an administrator can create milestones.");
         }
 
         var milestone = new ProjectMilestone

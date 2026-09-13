@@ -1,4 +1,3 @@
-using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.Projects.Commands;
@@ -23,7 +22,7 @@ public class UpdateProjectCommandHandlerTests
         context.ProjectAssignments.Add(mentorAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateProjectCommand(project.Id, " New Title ", " New Description ", ProjectStatus.Draft, category.Id),
@@ -48,7 +47,7 @@ public class UpdateProjectCommandHandlerTests
         context.ProjectAssignments.Add(studentAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectCommandHandler(context, student, new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new UpdateProjectCommand(project.Id, "New Title", "New Description", ProjectStatus.Draft, category.Id),
@@ -64,7 +63,7 @@ public class UpdateProjectCommandHandlerTests
         var handler = new UpdateProjectCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
+            new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -83,7 +82,7 @@ public class UpdateProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -102,7 +101,7 @@ public class UpdateProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectNotificationService(context));
 
         await handler.Handle(
             new UpdateProjectCommand(project.Id, "Title", "Description", ProjectStatus.Submitted, category.Id, " Ready for review "),
@@ -130,7 +129,7 @@ public class UpdateProjectCommandHandlerTests
         context.ProjectAssignments.AddRange(mentorAssignment, studentAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         await handler.Handle(
             new UpdateProjectCommand(project.Id, "Title", "Description", ProjectStatus.Submitted, category.Id),
@@ -153,33 +152,12 @@ public class UpdateProjectCommandHandlerTests
         context.Projects.Add(project);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new UpdateProjectCommandHandler(context, admin, new ProjectNotificationService(context));
 
         await handler.Handle(
             new UpdateProjectCommand(project.Id, "New Title", "Description", ProjectStatus.Draft, category.Id),
             CancellationToken.None);
 
         Assert.Empty(context.ProjectStatusHistories);
-    }
-
-    [Fact]
-    public async Task Handle_UnrelatedMentor_ThrowsForbiddenAccessException()
-    {
-        using var context = TestDbContextFactory.Create();
-        var category = new Category { Name = "Category" };
-        var project = new Project { Title = "Title", Description = "Description", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        context.Categories.Add(category);
-        context.Projects.Add(project);
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var handler = new UpdateProjectCommandHandler(
-            context,
-            TestCurrentUserService.AsMentor(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            handler.Handle(
-                new UpdateProjectCommand(project.Id, "Title", "Description", ProjectStatus.Draft, category.Id),
-                CancellationToken.None));
     }
 }

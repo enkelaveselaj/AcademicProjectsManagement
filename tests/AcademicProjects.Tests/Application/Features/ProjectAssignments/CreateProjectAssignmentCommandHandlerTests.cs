@@ -1,4 +1,3 @@
-using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Features.ProjectAssignments.Commands;
@@ -23,7 +22,7 @@ public class CreateProjectAssignmentCommandHandlerTests
         context.ProjectAssignments.Add(mentorAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateProjectAssignmentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new CreateProjectAssignmentCommandHandler(context, mentor, new ProjectNotificationService(context));
         var userId = Guid.NewGuid();
 
         var result = await handler.Handle(
@@ -50,7 +49,7 @@ public class CreateProjectAssignmentCommandHandlerTests
         context.ProjectAssignments.Add(studentAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateProjectAssignmentCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new CreateProjectAssignmentCommandHandler(context, student, new ProjectNotificationService(context));
         var mentorUserId = Guid.NewGuid();
 
         var result = await handler.Handle(
@@ -77,7 +76,7 @@ public class CreateProjectAssignmentCommandHandlerTests
         context.ProjectAssignments.AddRange(mentorAssignment, existingAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateProjectAssignmentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new CreateProjectAssignmentCommandHandler(context, mentor, new ProjectNotificationService(context));
         var newStudentId = Guid.NewGuid();
 
         await handler.Handle(
@@ -99,32 +98,11 @@ public class CreateProjectAssignmentCommandHandlerTests
         var handler = new CreateProjectAssignmentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
+            new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new CreateProjectAssignmentCommand(Guid.NewGuid(), Guid.NewGuid(), "Student"),
-                CancellationToken.None));
-    }
-
-    [Fact]
-    public async Task Handle_UnrelatedStudent_ThrowsForbiddenAccessException()
-    {
-        using var context = TestDbContextFactory.Create();
-        var category = new Category { Name = "Category" };
-        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        context.Categories.Add(category);
-        context.Projects.Add(project);
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var handler = new CreateProjectAssignmentCommandHandler(
-            context,
-            TestCurrentUserService.AsStudent(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            handler.Handle(
-                new CreateProjectAssignmentCommand(project.Id, Guid.NewGuid(), "Student"),
                 CancellationToken.None));
     }
 }

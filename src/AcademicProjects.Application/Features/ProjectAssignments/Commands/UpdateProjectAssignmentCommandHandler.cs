@@ -25,8 +25,11 @@ public sealed class UpdateProjectAssignmentCommandHandler(
                 assignment => assignment.Id == request.Id,
                 cancellationToken);
 
-        if (assignment is null)
+        if (assignment is null || assignment.ProjectId != request.ProjectId)
         {
+            // A ProjectId that doesn't match the assignment's actual project is treated as
+            // not-found rather than validated against the target project - an assignment can't
+            // be reparented to a different project through this endpoint.
             throw new NotFoundException("ProjectAssignment", request.Id);
         }
 
@@ -37,26 +40,19 @@ public sealed class UpdateProjectAssignmentCommandHandler(
         }
 
         var projectTitle = await context.Projects
-            .Where(project => project.Id == request.ProjectId)
+            .Where(project => project.Id == assignment.ProjectId)
             .Select(project => project.Title)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (projectTitle is null)
-        {
-            throw new NotFoundException("Project", request.ProjectId);
-        }
-
-        var originalProjectId = assignment.ProjectId;
         var role = request.Role.Trim();
 
-        assignment.ProjectId = request.ProjectId;
         assignment.UserId = request.UserId;
         assignment.Role = role;
 
         var userId = currentUser.GetUserId();
 
         await notifier.NotifyMembersAsync(
-            originalProjectId,
+            assignment.ProjectId,
             userId,
             $"An assignment on project '{projectTitle}' was updated.",
             NotificationType.Information,

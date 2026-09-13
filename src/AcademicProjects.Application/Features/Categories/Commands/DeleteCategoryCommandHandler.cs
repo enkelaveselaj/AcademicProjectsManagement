@@ -1,4 +1,3 @@
-using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Interfaces;
 using MediatR;
@@ -7,19 +6,13 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Categories.Commands;
 
 public sealed class DeleteCategoryCommandHandler(
-    IApplicationDbContext context,
-    ICurrentUserService currentUser)
+    IApplicationDbContext context)
     : IRequestHandler<DeleteCategoryCommand>
 {
     public async Task Handle(
         DeleteCategoryCommand request,
         CancellationToken cancellationToken)
     {
-        if (!currentUser.IsAdministrator())
-        {
-            throw new ForbiddenAccessException("Only administrators can delete categories.");
-        }
-
         var category = await context.Categories
             .FirstOrDefaultAsync(
                 category => category.Id == request.Id,

@@ -1,4 +1,3 @@
-using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Notifications;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Comments.Commands;
@@ -23,7 +22,7 @@ public class CreateCommentCommandHandlerTests
         context.ProjectAssignments.Add(assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateCommentCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new CreateCommentCommandHandler(context, student, new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new CreateCommentCommand(" Looks good ", project.Id),
@@ -49,7 +48,7 @@ public class CreateCommentCommandHandlerTests
         context.ProjectAssignments.Add(assignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateCommentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new CreateCommentCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         var result = await handler.Handle(
             new CreateCommentCommand("Good progress, keep it up.", project.Id),
@@ -74,7 +73,7 @@ public class CreateCommentCommandHandlerTests
         context.ProjectAssignments.AddRange(mentorAssignment, studentAssignment);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateCommentCommandHandler(context, mentor, new ProjectAccessService(context), new ProjectNotificationService(context));
+        var handler = new CreateCommentCommandHandler(context, mentor, new ProjectNotificationService(context));
 
         await handler.Handle(
             new CreateCommentCommand("Good progress, keep it up.", project.Id),
@@ -92,32 +91,11 @@ public class CreateCommentCommandHandlerTests
         var handler = new CreateCommentCommandHandler(
             context,
             TestCurrentUserService.AsAdministrator(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
+            new ProjectNotificationService(context));
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
                 new CreateCommentCommand("Content", Guid.NewGuid()),
-                CancellationToken.None));
-    }
-
-    [Fact]
-    public async Task Handle_NonMember_ThrowsForbiddenAccessException()
-    {
-        using var context = TestDbContextFactory.Create();
-        var category = new Category { Name = "Category" };
-        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
-        context.Categories.Add(category);
-        context.Projects.Add(project);
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var handler = new CreateCommentCommandHandler(
-            context,
-            TestCurrentUserService.AsStudent(),
-            new ProjectAccessService(context), new ProjectNotificationService(context));
-
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            handler.Handle(
-                new CreateCommentCommand("Content", project.Id),
                 CancellationToken.None));
     }
 }
