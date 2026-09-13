@@ -10,6 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../lib/useAuth";
+import { getInvitations } from "../lib/invitationsApi";
 import { getNotifications } from "../lib/notificationsApi";
 
 export type Screen =
@@ -51,6 +52,7 @@ interface LayoutProps {
 export function Layout({ activeScreen, onNavigate, children }: LayoutProps) {
   const { user, token, signOut } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
 
   useEffect(() => {
     if (!token) {
@@ -67,10 +69,21 @@ export function Layout({ activeScreen, onNavigate, children }: LayoutProps) {
       })
       .catch(() => {});
 
+    getInvitations(token)
+      .then((invitations) => {
+        if (!cancelled) {
+          setPendingInvitationCount(
+            invitations.filter((invitation) => invitation.status === 1 && invitation.invitedUserId === user?.id)
+              .length,
+          );
+        }
+      })
+      .catch(() => {});
+
     return () => {
       cancelled = true;
     };
-  }, [token, activeScreen]);
+  }, [token, activeScreen, user?.id]);
 
   const navItems = NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === "Administrator");
 
@@ -109,6 +122,14 @@ export function Layout({ activeScreen, onNavigate, children }: LayoutProps) {
                   {item.screen === "notifications" && unreadCount > 0 && (
                     <span className="rounded-full bg-red-800 px-1.5 py-0.5 text-xs font-semibold text-white">
                       {unreadCount}
+                    </span>
+                  )}
+                  {item.screen === "dashboard" && pendingInvitationCount > 0 && (
+                    <span
+                      title="Pending invitations awaiting your response"
+                      className="rounded-full bg-red-800 px-1.5 py-0.5 text-xs font-semibold text-white"
+                    >
+                      {pendingInvitationCount}
                     </span>
                   )}
                 </button>

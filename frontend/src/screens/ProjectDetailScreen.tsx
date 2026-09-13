@@ -5,6 +5,7 @@ import { ApiError } from "../lib/apiClient";
 import { paletteFor } from "../lib/colorPalette";
 import { createComment, deleteComment, getComments, type Comment } from "../lib/commentsApi";
 import { fetchDocumentBlob, getDocuments, type DocumentFile } from "../lib/documentsApi";
+import { UploadDocumentModal } from "./UploadDocumentModal";
 import { FILE_CATEGORY_META, formatFileSize, getFileCategory } from "../lib/fileCategory";
 import { cancelInvitation, getInvitations, type ProjectInvitation } from "../lib/invitationsApi";
 import { InviteMemberModal } from "./InviteMemberModal";
@@ -83,6 +84,7 @@ export function ProjectDetailScreen({
 
   const [milestoneModal, setMilestoneModal] = useState<"create" | ProjectMilestone | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const loadInvitations = useCallback(() => {
     if (!token) {
@@ -138,35 +140,28 @@ export function ProjectDetailScreen({
     loadStatusHistories();
   }, [loadStatusHistories]);
 
-  useEffect(() => {
+  const loadDocuments = useCallback(() => {
     if (!token) {
       return;
     }
 
-    let cancelled = false;
     setIsLoadingDocuments(true);
 
     getDocuments(token)
       .then((allDocuments) => {
-        if (!cancelled) {
-          setDocuments(allDocuments.filter((doc) => doc.projectId === project.id));
-        }
+        setDocuments(allDocuments.filter((doc) => doc.projectId === project.id));
       })
       .catch(() => {
-        if (!cancelled) {
-          setDocumentError("Could not load documents.");
-        }
+        setDocumentError("Could not load documents.");
       })
       .finally(() => {
-        if (!cancelled) {
-          setIsLoadingDocuments(false);
-        }
+        setIsLoadingDocuments(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, [token, project.id]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
 
   const directoryById = useMemo(() => {
     const map = new Map<string, UserDirectoryEntry>();
@@ -494,6 +489,15 @@ export function ProjectDetailScreen({
                           <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${meta.badge}`}>
                             {meta.label}
                           </span>
+                          {canManageMilestones && (
+                            <button
+                              type="button"
+                              onClick={() => setMilestoneModal(milestone)}
+                              className="shrink-0 text-xs font-medium text-slate-500 hover:text-slate-900"
+                            >
+                              Edit
+                            </button>
+                          )}
                         </div>
                       );
                     })}
@@ -573,7 +577,19 @@ export function ProjectDetailScreen({
 
           {activeTab === "documents" && (
             <div className="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 className="font-serif text-lg font-bold text-slate-900">Documents</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-serif text-lg font-bold text-slate-900">Documents</h2>
+                {canManageProject && (
+                  <button
+                    type="button"
+                    onClick={() => setIsUploadModalOpen(true)}
+                    className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Document
+                  </button>
+                )}
+              </div>
               {documentError && <p className="mt-2 text-sm text-red-600">{documentError}</p>}
               {isLoadingDocuments ? (
                 <p className="mt-3 text-sm text-slate-500">Loading...</p>
@@ -818,6 +834,18 @@ export function ProjectDetailScreen({
             setIsStatusModalOpen(false);
             onRefresh();
             loadStatusHistories();
+          }}
+        />
+      )}
+
+      {isUploadModalOpen && (
+        <UploadDocumentModal
+          projects={[project]}
+          fixedProject={project}
+          onClose={() => setIsUploadModalOpen(false)}
+          onUploaded={() => {
+            setIsUploadModalOpen(false);
+            loadDocuments();
           }}
         />
       )}

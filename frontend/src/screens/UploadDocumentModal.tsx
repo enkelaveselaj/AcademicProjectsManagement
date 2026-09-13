@@ -7,6 +7,7 @@ import type { Project } from "../lib/projectsApi";
 
 interface UploadDocumentModalProps {
   projects: Project[];
+  fixedProject?: Project;
   onClose: () => void;
   onUploaded: () => void;
 }
@@ -18,10 +19,10 @@ function uploadErrorMessage(err: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-export function UploadDocumentModal({ projects, onClose, onUploaded }: UploadDocumentModalProps) {
+export function UploadDocumentModal({ projects, fixedProject, onClose, onUploaded }: UploadDocumentModalProps) {
   const { token } = useAuth();
   const [file, setFile] = useState<File | null>(null);
-  const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
+  const [projectId, setProjectId] = useState(fixedProject?.id ?? projects[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -55,24 +56,33 @@ export function UploadDocumentModal({ projects, onClose, onUploaded }: UploadDoc
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label htmlFor="uploadProject" className="block text-sm font-medium text-slate-800">
-              Project
-            </label>
-            <select
-              id="uploadProject"
-              required
-              value={projectId}
-              onChange={(event) => setProjectId(event.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none"
-            >
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.title}
-                </option>
-              ))}
-            </select>
-          </div>
+          {fixedProject ? (
+            <div>
+              <p className="block text-sm font-medium text-slate-800">Project</p>
+              <p className="mt-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                {fixedProject.title}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="uploadProject" className="block text-sm font-medium text-slate-800">
+                Project
+              </label>
+              <select
+                id="uploadProject"
+                required
+                value={projectId}
+                onChange={(event) => setProjectId(event.target.value)}
+                className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none"
+              >
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label htmlFor="uploadFile" className="block text-sm font-medium text-slate-800">

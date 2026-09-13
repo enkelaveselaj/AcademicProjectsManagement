@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 import { useAuth } from "../lib/useAuth";
+import { MyInvitationsPanel } from "../components/MyInvitationsPanel";
 import {
   getNotifications,
   markAllNotificationsAsRead,
@@ -119,6 +120,10 @@ export function NotificationsScreen() {
         >
           {isMarkingAll ? "Marking..." : "Mark all read"}
         </button>
+      </div>
+
+      <div className="mt-6">
+        <MyInvitationsPanel />
       </div>
 
       <div className="mt-6 flex gap-2">
