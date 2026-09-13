@@ -71,4 +71,29 @@ public class DeleteProjectMilestoneCommandHandlerTests
                 new DeleteProjectMilestoneCommand(milestone.Id),
                 CancellationToken.None));
     }
+
+    [Fact]
+    public async Task Handle_ProjectMemberStudent_ThrowsForbiddenAccessException()
+    {
+        // Only the project's mentor (or an administrator) may delete milestones - students cannot.
+        using var context = TestDbContextFactory.Create();
+        var category = new Category { Name = "Category" };
+        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        var student = TestCurrentUserService.AsStudent();
+        var studentAssignment = new ProjectAssignment { ProjectId = project.Id, Project = project, UserId = student.UserId!.Value, Role = "Student" };
+        var milestone = new ProjectMilestone { Title = "Milestone", DueDate = DateTime.UtcNow.AddDays(30), ProjectId = project.Id, Project = project };
+        context.Categories.Add(category);
+        context.Projects.Add(project);
+        context.ProjectAssignments.Add(studentAssignment);
+        context.ProjectMilestones.Add(milestone);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new DeleteProjectMilestoneCommandHandler(
+            context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+            handler.Handle(
+                new DeleteProjectMilestoneCommand(milestone.Id),
+                CancellationToken.None));
+    }
 }

@@ -11,6 +11,7 @@ public interface IApplicationDbContext
     DbSet<Notification> Notifications { get; }
     DbSet<Project> Projects { get; }
     DbSet<ProjectAssignment> ProjectAssignments { get; }
+    DbSet<ProjectInvitation> ProjectInvitations { get; }
     DbSet<ProjectMilestone> ProjectMilestones { get; }
     DbSet<ProjectStatusHistory> ProjectStatusHistories { get; }
 

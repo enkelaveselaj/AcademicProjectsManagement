@@ -1,3 +1,4 @@
+using AcademicProjects.Application.Common.Authorization;
 using AcademicProjects.Application.Common.Exceptions;
 using AcademicProjects.Application.Features.Projects.DTOs;
 using AcademicProjects.Application.Interfaces;
@@ -7,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Application.Features.Projects.Queries;
 
 public sealed class GetProjectByIdQueryHandler(
-    IApplicationDbContext context)
+    IApplicationDbContext context,
+    ICurrentUserService currentUser,
+    ProjectAccessService projectAccess)
     : IRequestHandler<GetProjectByIdQuery, ProjectDto>
 {
     public async Task<ProjectDto> Handle(
@@ -29,6 +32,17 @@ public sealed class GetProjectByIdQueryHandler(
                 project.UpdatedAt))
             .FirstOrDefaultAsync(cancellationToken);
 
-        return project ?? throw new NotFoundException("Project", request.Id);
+        if (project is null)
+        {
+            throw new NotFoundException("Project", request.Id);
+        }
+
+        if (!currentUser.IsAdministrator()
+            && !await projectAccess.IsMemberAsync(project.Id, currentUser.GetUserId(), cancellationToken))
+        {
+            throw new ForbiddenAccessException("You do not have access to this project.");
+        }
+
+        return project;
     }
 }

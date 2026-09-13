@@ -22,6 +22,12 @@ public static class ProblemDetailsFactory
                 Title = $"{notFoundException.EntityName} not found.",
                 Detail = notFoundException.Message
             },
+            ConflictException conflictException => new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Conflict.",
+                Detail = conflictException.Message
+            },
             KeyNotFoundException notFoundException => new ProblemDetails
             {
                 Status = StatusCodes.Status404NotFound,

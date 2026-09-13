@@ -29,6 +29,8 @@ public class ApplicationDbContext
 
     public DbSet<ProjectAssignment> ProjectAssignments => Set<ProjectAssignment>();
 
+    public DbSet<ProjectInvitation> ProjectInvitations => Set<ProjectInvitation>();
+
     public DbSet<ProjectMilestone> ProjectMilestones => Set<ProjectMilestone>();
 
     public DbSet<ProjectStatusHistory> ProjectStatusHistories => Set<ProjectStatusHistory>();

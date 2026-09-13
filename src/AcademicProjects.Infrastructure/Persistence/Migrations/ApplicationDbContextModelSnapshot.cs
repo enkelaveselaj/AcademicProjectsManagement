@@ -227,6 +227,44 @@ namespace AcademicProjects.Infrastructure.Persistence.Migrations
                     b.ToTable("ProjectAssignments", (string)null);
                 });
 
+            modelBuilder.Entity("AcademicProjects.Domain.Entities.ProjectInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("InvitedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("InvitedUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvitedUserId");
+
+                    b.HasIndex("ProjectId", "InvitedUserId", "Status");
+
+                    b.ToTable("ProjectInvitations", (string)null);
+                });
+
             modelBuilder.Entity("AcademicProjects.Domain.Entities.ProjectMilestone", b =>
                 {
                     b.Property<Guid>("Id")
@@ -565,6 +603,17 @@ namespace AcademicProjects.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("AcademicProjects.Domain.Entities.ProjectAssignment", b =>
+                {
+                    b.HasOne("AcademicProjects.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("AcademicProjects.Domain.Entities.ProjectInvitation", b =>
                 {
                     b.HasOne("AcademicProjects.Domain.Entities.Project", "Project")
                         .WithMany()

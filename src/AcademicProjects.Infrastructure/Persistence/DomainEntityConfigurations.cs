@@ -106,6 +106,24 @@ public sealed class ProjectAssignmentConfiguration : IEntityTypeConfiguration<Pr
     }
 }
 
+public sealed class ProjectInvitationConfiguration : IEntityTypeConfiguration<ProjectInvitation>
+{
+    public void Configure(EntityTypeBuilder<ProjectInvitation> builder)
+    {
+        builder.ToTable("ProjectInvitations");
+        builder.HasKey(invitation => invitation.Id);
+        builder.Property(invitation => invitation.Role).HasMaxLength(50).IsRequired();
+        builder.Property(invitation => invitation.Status).HasConversion<int>().IsRequired();
+        builder.HasOne(invitation => invitation.Project)
+            .WithMany()
+            .HasForeignKey(invitation => invitation.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(invitation => new { invitation.ProjectId, invitation.InvitedUserId, invitation.Status });
+        builder.HasIndex(invitation => invitation.InvitedUserId);
+        builder.ConfigureAuditProperties();
+    }
+}
+
 public sealed class ProjectStatusHistoryConfiguration : IEntityTypeConfiguration<ProjectStatusHistory>
 {
     public void Configure(EntityTypeBuilder<ProjectStatusHistory> builder)

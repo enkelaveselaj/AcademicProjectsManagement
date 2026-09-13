@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 import { useAuth } from "../lib/useAuth";
+import { ApiError } from "../lib/apiClient";
 import type { Screen } from "../components/Layout";
 import { getCategories, type Category } from "../lib/categoriesApi";
+import {
+  acceptInvitation,
+  declineInvitation,
+  getInvitations,
+  type ProjectInvitation,
+} from "../lib/invitationsApi";
 import { getMilestones, type ProjectMilestone } from "../lib/milestonesApi";
 import { getNotifications, type Notification, type NotificationType } from "../lib/notificationsApi";
 import { getPendingUsers, getUsers, type PendingUser, type UserSummary } from "../lib/usersApi";
@@ -76,8 +83,11 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [invitationError, setInvitationError] = useState<string | null>(null);
+  const [busyInvitationId, setBusyInvitationId] = useState<string | null>(null);
 
   const loadAll = useCallback(async () => {
     if (!token) {
@@ -88,16 +98,18 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
     setLoadError(null);
 
     try {
-      const [projectsData, milestonesData, categoriesData, notificationsData] = await Promise.all([
+      const [projectsData, milestonesData, categoriesData, notificationsData, invitationsData] = await Promise.all([
         getProjects(token),
         getMilestones(token),
         getCategories(token),
         getNotifications(token),
+        getInvitations(token),
       ]);
       setProjects(projectsData);
       setMilestones(milestonesData);
       setCategories(categoriesData);
       setNotifications(notificationsData);
+      setInvitations(invitationsData);
 
       if (isAdmin) {
         const [usersData, pendingData] = await Promise.all([getUsers(token), getPendingUsers(token)]);
@@ -176,6 +188,39 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
 
   const maxCategoryCount = Math.max(1, ...categories.map((category) => category.projectCount));
 
+  const projectsById = useMemo(() => {
+    const map = new Map<string, Project>();
+    for (const project of projects) {
+      map.set(project.id, project);
+    }
+    return map;
+  }, [projects]);
+
+  const myInvitations = useMemo(
+    () => invitations.filter((invitation) => invitation.status === 1 && invitation.invitedUserId === user?.id),
+    [invitations, user],
+  );
+
+  async function handleRespondToInvitation(invitationId: string, accept: boolean) {
+    if (!token) {
+      return;
+    }
+    setInvitationError(null);
+    setBusyInvitationId(invitationId);
+    try {
+      if (accept) {
+        await acceptInvitation(invitationId, token);
+      } else {
+        await declineInvitation(invitationId, token);
+      }
+      void loadAll();
+    } catch (err) {
+      setInvitationError(err instanceof ApiError ? err.message : "Could not respond to the invitation.");
+    } finally {
+      setBusyInvitationId(null);
+    }
+  }
+
   if (isLoading) {
     return (
       <div>
@@ -206,6 +251,51 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
           textClass={unreadNotifications > 0 ? "text-red-800" : "text-slate-900"}
         />
       </div>
+
+      {myInvitations.length > 0 && (
+        <div>
+          <h2 className="font-serif text-lg font-bold text-slate-900">My Invitations</h2>
+          {invitationError && <p className="mt-2 text-sm text-red-600">{invitationError}</p>}
+          <div className="mt-3 space-y-3">
+            {myInvitations.map((invitation) => {
+              const project = projectsById.get(invitation.projectId);
+              const isBusy = busyInvitationId === invitation.id;
+
+              return (
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {project?.title ?? "A project"} invited you as {invitation.role}
+                    </p>
+                    <p className="text-xs text-slate-500">Awaiting your response</p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleRespondToInvitation(invitation.id, true)}
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleRespondToInvitation(invitation.id, false)}
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div>
         <SectionHeader title="Projects by Status" onViewAll={() => onNavigate("projects")} />

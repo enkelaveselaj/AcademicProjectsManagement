@@ -30,9 +30,9 @@ public sealed class DeleteProjectMilestoneCommandHandler(
         }
 
         if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsMemberAsync(milestone.ProjectId, currentUser.GetUserId(), cancellationToken))
+            && !await projectAccess.IsProjectMentorAsync(milestone.ProjectId, currentUser.GetUserId(), cancellationToken))
         {
-            throw new ForbiddenAccessException("Only a project member or an administrator can delete this milestone.");
+            throw new ForbiddenAccessException("Only the project mentor or an administrator can delete this milestone.");
         }
 
         var projectTitle = await context.Projects

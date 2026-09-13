@@ -31,9 +31,9 @@ public sealed class UpdateProjectMilestoneCommandHandler(
         }
 
         if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsMemberAsync(milestone.ProjectId, currentUser.GetUserId(), cancellationToken))
+            && !await projectAccess.IsProjectMentorAsync(milestone.ProjectId, currentUser.GetUserId(), cancellationToken))
         {
-            throw new ForbiddenAccessException("Only a project member or an administrator can update this milestone.");
+            throw new ForbiddenAccessException("Only the project mentor or an administrator can update this milestone.");
         }
 
         var projectTitle = await context.Projects

@@ -23,4 +23,8 @@ public interface IUserManagementService
 
     Task<IReadOnlyList<UserDirectoryEntry>> GetUserDirectoryAsync(
         CancellationToken cancellationToken = default);
+
+    Task<string?> GetUserRoleAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

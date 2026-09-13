@@ -55,9 +55,30 @@ public class CreateProjectMilestoneCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ProjectMemberStudent_CreatesMilestoneAndReturnsDto()
+    public async Task Handle_Administrator_CreatesMilestoneEvenWithoutMembership()
     {
-        // Student-run projects need to be able to set their own milestones too.
+        using var context = TestDbContextFactory.Create();
+        var category = new Category { Name = "Category" };
+        var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
+        context.Categories.Add(category);
+        context.Projects.Add(project);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new CreateProjectMilestoneCommandHandler(
+            context, TestCurrentUserService.AsAdministrator(), new ProjectAccessService(context), new ProjectNotificationService(context));
+
+        var result = await handler.Handle(
+            new CreateProjectMilestoneCommand("Milestone", null, FutureDueDate, project.Id),
+            CancellationToken.None);
+
+        Assert.Equal("Milestone", result.Title);
+        Assert.Single(context.ProjectMilestones);
+    }
+
+    [Fact]
+    public async Task Handle_ProjectMemberStudent_ThrowsForbiddenAccessException()
+    {
+        // Only the project's mentor (or an administrator) may set milestones - students cannot.
         using var context = TestDbContextFactory.Create();
         var category = new Category { Name = "Category" };
         var project = new Project { Title = "Project", Description = "Desc", Status = ProjectStatus.Draft, CategoryId = category.Id, Category = category };
@@ -70,12 +91,10 @@ public class CreateProjectMilestoneCommandHandlerTests
 
         var handler = new CreateProjectMilestoneCommandHandler(context, student, new ProjectAccessService(context), new ProjectNotificationService(context));
 
-        var result = await handler.Handle(
-            new CreateProjectMilestoneCommand("Milestone", null, FutureDueDate, project.Id),
-            CancellationToken.None);
-
-        Assert.Equal("Milestone", result.Title);
-        Assert.Single(context.ProjectMilestones);
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+            handler.Handle(
+                new CreateProjectMilestoneCommand("Milestone", null, FutureDueDate, project.Id),
+                CancellationToken.None));
     }
 
     [Fact]

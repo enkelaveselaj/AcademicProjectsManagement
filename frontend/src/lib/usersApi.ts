@@ -24,6 +24,7 @@ export interface UserDirectoryEntry {
   id: string;
   firstName: string;
   lastName: string;
+  role: string;
 }
 
 export function getUsers(token: string): Promise<UserSummary[]> {

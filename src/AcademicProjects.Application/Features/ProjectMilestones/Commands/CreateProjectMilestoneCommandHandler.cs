@@ -32,9 +32,9 @@ public sealed class CreateProjectMilestoneCommandHandler(
         }
 
         if (!currentUser.IsAdministrator()
-            && !await projectAccess.IsMemberAsync(request.ProjectId, currentUser.GetUserId(), cancellationToken))
+            && !await projectAccess.IsProjectMentorAsync(request.ProjectId, currentUser.GetUserId(), cancellationToken))
         {
-            throw new ForbiddenAccessException("Only a project member or an administrator can create milestones.");
+            throw new ForbiddenAccessException("Only the project mentor or an administrator can create milestones.");
         }
 
         var milestone = new ProjectMilestone

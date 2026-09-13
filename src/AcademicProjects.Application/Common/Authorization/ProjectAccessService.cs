@@ -21,4 +21,14 @@ public sealed class ProjectAccessService(IApplicationDbContext context)
             .Select(assignment => assignment.ProjectId)
             .Distinct()
             .ToListAsync(cancellationToken);
+
+    public Task<bool> IsProjectMentorAsync(
+        Guid projectId,
+        Guid userId,
+        CancellationToken cancellationToken) =>
+        context.ProjectAssignments.AnyAsync(
+            assignment => assignment.ProjectId == projectId
+                && assignment.UserId == userId
+                && assignment.Role == "Mentor",
+            cancellationToken);
 }

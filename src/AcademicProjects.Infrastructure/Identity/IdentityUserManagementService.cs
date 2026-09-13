@@ -156,11 +156,41 @@ public sealed class IdentityUserManagementService(
     public async Task<IReadOnlyList<UserDirectoryEntry>> GetUserDirectoryAsync(
         CancellationToken cancellationToken = default)
     {
-        return await userManager.Users
+        var users = await userManager.Users
             .Where(user => user.ApprovalStatus == ApprovalStatus.Approved)
             .OrderBy(user => user.FirstName)
-            .Select(user => new UserDirectoryEntry(user.Id, user.FirstName, user.LastName))
             .ToListAsync(cancellationToken);
+
+        var entries = new List<UserDirectoryEntry>(users.Count);
+
+        foreach (var user in users)
+        {
+            var roles = await userManager.GetRolesAsync(user);
+
+            entries.Add(new UserDirectoryEntry(
+                user.Id,
+                user.FirstName,
+                user.LastName,
+                roles.FirstOrDefault() ?? string.Empty));
+        }
+
+        return entries;
+    }
+
+    public async Task<string?> GetUserRoleAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+        {
+            return null;
+        }
+
+        var roles = await userManager.GetRolesAsync(user);
+
+        return roles.FirstOrDefault();
     }
 
     private static Dictionary<string, string[]> ToErrors(IdentityResult result) =>

@@ -43,6 +43,7 @@ export interface ProjectInput {
   description?: string;
   status: ProjectStatus;
   categoryId: string;
+  statusChangeComment?: string;
 }
 
 export function getProjects(token: string): Promise<Project[]> {

@@ -42,7 +42,7 @@ public sealed record ChangeUserRoleRequest(string Role);
 /// Minimal, non-admin-gated name lookup so any authenticated user can resolve teammate/mentor
 /// display names (e.g. on a project card) without needing the Administrator-only user list.
 /// </summary>
-public sealed record UserDirectoryEntry(Guid Id, string FirstName, string LastName);
+public sealed record UserDirectoryEntry(Guid Id, string FirstName, string LastName, string Role);
 
 public sealed record ServiceResult<T>(T? Value, IReadOnlyDictionary<string, string[]> Errors)
 {
