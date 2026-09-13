@@ -14,11 +14,14 @@ var group = endpoints.MapGroup("/api/auth");
     group.MapPost("/register", RegisterAsync);
     group.MapPost("/login", LoginAsync);
     group.MapGet("/me", GetCurrentUser).RequireAuthorization();
+    group.MapPut("/change-password", ChangePasswordAsync).RequireAuthorization();
     group.MapGet("/directory", GetUserDirectoryAsync).RequireAuthorization();
 
     group.MapGet("/users", GetUsersAsync)
         .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Administrator)));
     group.MapPut("/users/{id:guid}/role", ChangeUserRoleAsync)
+        .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Administrator)));
+    group.MapPut("/users/{id:guid}/reset-password", ResetUserPasswordAsync)
         .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Administrator)));
     group.MapGet("/pending-users", GetPendingUsersAsync)
         .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Administrator)));
@@ -79,6 +82,21 @@ private static IResult GetCurrentUser(ClaimsPrincipal user) => Results.Ok(new
     roles = user.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
 });
 
+private static async Task<IResult> ChangePasswordAsync(
+    ChangePasswordRequest request,
+    ClaimsPrincipal user,
+    ApplicationAuthenticationService authenticationService,
+    CancellationToken cancellationToken)
+{
+    var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    var result = await authenticationService.ChangePasswordAsync(userId, request, cancellationToken);
+
+    return result.Succeeded
+        ? Results.NoContent()
+        : Results.ValidationProblem(result.Errors);
+}
+
 private static async Task<IResult> GetUserDirectoryAsync(
     IUserManagementService userManagementService,
     CancellationToken cancellationToken)
@@ -107,6 +125,19 @@ private static async Task<IResult> ChangeUserRoleAsync(
 
     return result.Succeeded
         ? Results.Ok(result.Value)
+        : Results.ValidationProblem(result.Errors);
+}
+
+private static async Task<IResult> ResetUserPasswordAsync(
+    Guid id,
+    ResetUserPasswordRequest request,
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken)
+{
+    var result = await userManagementService.ResetUserPasswordAsync(id, request.NewPassword, cancellationToken);
+
+    return result.Succeeded
+        ? Results.NoContent()
         : Results.ValidationProblem(result.Errors);
 }
 

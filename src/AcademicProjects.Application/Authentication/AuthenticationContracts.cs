@@ -38,6 +38,10 @@ public sealed record PendingUser(
 
 public sealed record ChangeUserRoleRequest(string Role);
 
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+public sealed record ResetUserPasswordRequest(string NewPassword);
+
 /// <summary>
 /// Minimal, non-admin-gated name lookup so any authenticated user can resolve teammate/mentor
 /// display names (e.g. on a project card) without needing the Administrator-only user list.

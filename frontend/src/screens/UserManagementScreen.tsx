@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { KeyRound } from "lucide-react";
 import { useAuth } from "../lib/useAuth";
 import { ApiError } from "../lib/apiClient";
 import {
@@ -10,6 +11,7 @@ import {
   type PendingUser,
   type UserSummary,
 } from "../lib/usersApi";
+import { ResetUserPasswordModal } from "./ResetUserPasswordModal";
 
 const ROLE_OPTIONS = ["Student", "Mentor", "Administrator"] as const;
 
@@ -29,6 +31,7 @@ export function UserManagementScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  const [resetPasswordUser, setResetPasswordUser] = useState<UserSummary | null>(null);
 
   const loadData = useCallback(async () => {
     if (!token) {
@@ -230,18 +233,28 @@ export function UserManagementScreen() {
                       </div>
                     </div>
 
-                    <select
-                      value={user.role}
-                      disabled={busyIds.has(user.id)}
-                      onChange={(event) => handleRoleChange(user.id, event.target.value)}
-                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:border-slate-400 focus:outline-none disabled:opacity-50"
-                    >
-                      {ROLE_OPTIONS.map((role) => (
-                        <option key={role} value={role}>
-                          {role}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <select
+                        value={user.role}
+                        disabled={busyIds.has(user.id)}
+                        onChange={(event) => handleRoleChange(user.id, event.target.value)}
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:border-slate-400 focus:outline-none disabled:opacity-50"
+                      >
+                        {ROLE_OPTIONS.map((role) => (
+                          <option key={role} value={role}>
+                            {role}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        title="Reset password"
+                        onClick={() => setResetPasswordUser(user)}
+                        className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {actionErrors[user.id] && <p className="mt-2 text-xs text-red-600">{actionErrors[user.id]}</p>}
@@ -250,6 +263,10 @@ export function UserManagementScreen() {
             </div>
           </section>
         </>
+      )}
+
+      {resetPasswordUser && (
+        <ResetUserPasswordModal user={resetPasswordUser} onClose={() => setResetPasswordUser(null)} />
       )}
     </div>
   );

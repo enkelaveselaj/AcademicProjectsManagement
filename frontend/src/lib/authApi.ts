@@ -1,5 +1,17 @@
 import { apiRequest } from "./apiClient";
 
+export function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  token: string,
+): Promise<void> {
+  return apiRequest<void>("/api/auth/change-password", {
+    method: "PUT",
+    body: { currentPassword, newPassword },
+    token,
+  });
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

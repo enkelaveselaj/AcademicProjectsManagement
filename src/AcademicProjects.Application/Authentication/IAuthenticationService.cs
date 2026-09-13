@@ -9,4 +9,9 @@ public interface IAuthenticationService
     Task<ServiceResult<AccessToken>> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<bool>> ChangePasswordAsync(
+        Guid userId,
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default);
 }

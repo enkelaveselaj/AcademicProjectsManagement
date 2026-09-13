@@ -60,3 +60,11 @@ export function rejectUser(userId: string, token: string): Promise<void> {
     token,
   });
 }
+
+export function resetUserPassword(userId: string, newPassword: string, token: string): Promise<void> {
+  return apiRequest<void>(`/api/auth/users/${userId}/reset-password`, {
+    method: "PUT",
+    body: { newPassword },
+    token,
+  });
+}

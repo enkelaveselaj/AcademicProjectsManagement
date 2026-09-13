@@ -27,4 +27,9 @@ public interface IUserManagementService
     Task<string?> GetUserRoleAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<bool>> ResetUserPasswordAsync(
+        Guid userId,
+        string newPassword,
+        CancellationToken cancellationToken = default);
 }

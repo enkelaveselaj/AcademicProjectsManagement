@@ -44,4 +44,10 @@ public sealed class FakeUserManagementService : IUserManagementService
         Guid userId,
         CancellationToken cancellationToken = default) =>
         Task.FromResult(_roles.GetValueOrDefault(userId));
+
+    public Task<ServiceResult<bool>> ResetUserPasswordAsync(
+        Guid userId,
+        string newPassword,
+        CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException();
 }

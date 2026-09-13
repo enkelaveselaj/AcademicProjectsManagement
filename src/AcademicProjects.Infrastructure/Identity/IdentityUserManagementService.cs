@@ -1,5 +1,7 @@
 using AcademicProjects.Application.Authentication;
 using AcademicProjects.Application.Common.Exceptions;
+using AcademicProjects.Application.Interfaces;
+using AcademicProjects.Domain.Entities;
 using AcademicProjects.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace AcademicProjects.Infrastructure.Identity;
 
 public sealed class IdentityUserManagementService(
-    UserManager<ApplicationUser> userManager) : IUserManagementService
+    UserManager<ApplicationUser> userManager,
+    IApplicationDbContext context) : IUserManagementService
 {
     public async Task<IReadOnlyList<UserSummary>> GetUsersAsync(
         CancellationToken cancellationToken = default)
@@ -191,6 +194,45 @@ public sealed class IdentityUserManagementService(
         var roles = await userManager.GetRolesAsync(user);
 
         return roles.FirstOrDefault();
+    }
+
+    public async Task<ServiceResult<bool>> ResetUserPasswordAsync(
+        Guid userId,
+        string newPassword,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            return ServiceResult<bool>.Failure(new Dictionary<string, string[]>
+            {
+                ["password"] = ["A new password is required."]
+            });
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new NotFoundException("User", userId);
+
+        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await userManager.ResetPasswordAsync(user, resetToken, newPassword);
+
+        if (!result.Succeeded)
+        {
+            return ServiceResult<bool>.Failure(new Dictionary<string, string[]>
+            {
+                ["password"] = result.Errors.Select(error => error.Description).ToArray()
+            });
+        }
+
+        context.Notifications.Add(new Notification
+        {
+            Message = "Your password was reset by an administrator.",
+            Type = NotificationType.Warning,
+            UserId = user.Id
+        });
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        return ServiceResult<bool>.Success(true);
     }
 
     private static Dictionary<string, string[]> ToErrors(IdentityResult result) =>

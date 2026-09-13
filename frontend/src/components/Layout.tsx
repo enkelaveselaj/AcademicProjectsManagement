@@ -8,8 +8,10 @@ import {
   Users,
   Tag,
   LogOut,
+  KeyRound,
 } from "lucide-react";
 import { useAuth } from "../lib/useAuth";
+import { ChangePasswordModal } from "./ChangePasswordModal";
 import { getInvitations } from "../lib/invitationsApi";
 import { getNotifications } from "../lib/notificationsApi";
 
@@ -53,6 +55,7 @@ export function Layout({ activeScreen, onNavigate, children }: LayoutProps) {
   const { user, token, signOut } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -152,6 +155,14 @@ export function Layout({ activeScreen, onNavigate, children }: LayoutProps) {
               </div>
               <button
                 type="button"
+                onClick={() => setIsChangePasswordOpen(true)}
+                title="Change password"
+                className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+              >
+                <KeyRound className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
                 onClick={signOut}
                 title="Sign out"
                 className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
@@ -164,6 +175,8 @@ export function Layout({ activeScreen, onNavigate, children }: LayoutProps) {
       </aside>
 
       <main className="flex-1 overflow-y-auto p-8">{children}</main>
+
+      {isChangePasswordOpen && <ChangePasswordModal onClose={() => setIsChangePasswordOpen(false)} />}
     </div>
   );
 }

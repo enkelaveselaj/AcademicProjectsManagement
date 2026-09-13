@@ -139,6 +139,37 @@ public sealed class IdentityAuthenticationService(
         return ServiceResult<AccessToken>.Success(token);
     }
 
+    public async Task<ServiceResult<bool>> ChangePasswordAsync(
+        Guid userId,
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return ServiceResult<bool>.Failure(new Dictionary<string, string[]>
+            {
+                ["password"] = ["Current and new password are required."]
+            });
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return ServiceResult<bool>.Failure(new Dictionary<string, string[]>
+            {
+                ["password"] = ["Could not change the password for this account."]
+            });
+        }
+
+        var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            return ServiceResult<bool>.Failure(ToErrors(result));
+        }
+
+        return ServiceResult<bool>.Success(true);
+    }
+
     private async Task NotifyAdministratorsOfPendingRequestAsync(
         ApplicationUser user,
         UserRole requestedRole,
